@@ -18,7 +18,7 @@ namespace KutuphaneYonetim.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var kategoriler = await _context.Kategori.ToListAsync();
+            var kategoriler = _context.Kategori.ToList();
             return View(kategoriler);
         }
 
