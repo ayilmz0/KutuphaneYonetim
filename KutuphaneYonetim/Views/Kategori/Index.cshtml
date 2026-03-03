@@ -1,0 +1,102 @@
+﻿@model List<KutuphaneYonetim.Models.Kategori>
+
+@{
+    ViewData["Title"] = "Kategori";
+}
+
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
+}
+
+<h1 class="text-2xl font-bold mb-4">Kategori Ara</h1>
+
+<form method="get" class="mb-4">
+    <input type="text" id="searchBox" name="q" value="@ViewBag.Query" placeholder="Kategori Adı"
+           class="border p-2 rounded w-1/2">
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Ara</button>
+
+    @* Sadece Personel görebilir *@
+    @if (rol == "Personel")
+    {
+        <button asp-action="Create" type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Kategori Ekle</button>
+    }
+</form>
+
+<table class="min-w-full border">
+    <thead>
+        <tr class="bg-gray-200">
+            <th class="p-2 border">Kategori Adı</th>
+            @if (rol == "Personel")
+            {
+                <th class="p-2 border">İşlemler</th>
+            }
+        </tr>
+    </thead>
+    <tbody id="kategoriTableBody">
+        @foreach (var kategori in Model)
+        {
+            <tr id="row-@kategori.KategoriId">
+                <td class="p-2 border">@kategori.KategoriAd</td>
+                @if (rol == "Personel")
+                {
+                    <td class="p-2 border">
+                        <button type="button"
+                                class="bg-red-500 text-white px-4 py-2 rounded delete-btn"
+                                data-id="@kategori.KategoriId">
+                            Sil
+                        </button>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    // Silme (sadece Personel görebilir)
+    $(document).on("click", ".delete-btn", function () {
+        if (!confirm("Bu kategoriyi silmek istediğinizden emin misiniz?")) return;
+
+        var id = $(this).data("id");
+
+        $.ajax({
+            type: "POST",
+            url: "/Kategori/DeleteAjax",
+            data: { id: id },
+            success: function (res) {
+                if (res.success) {
+                    $("#row-" + id).remove();
+                    alert(res.message);
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function () {
+                alert("Sunucu hatası oluştu.");
+            }
+        });
+    });
+
+    // Arama
+    $("#searchBox").on("keyup", function (e) {
+        e.preventDefault();
+        var query = $(this).val();
+
+        $.ajax({
+            type: "GET",
+            url: "/Kategori/AraAjax",
+            data: { q: query },
+            success: function (res) {
+                $("#kategoriTableBody").html(res);
+            },
+            error: function () {
+                alert("Arama sırasında hata oluştu.");
+            }
+        });
+    });
+
+</script>

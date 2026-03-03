@@ -1,0 +1,38 @@
+﻿@model List<KutuphaneYonetim.Models.Kitap>
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
+}
+
+@foreach (var kitap in Model)
+{
+    <tr id="row-@kitap.KitapId">
+        <td class="p-2 border">@kitap.KitapAd</td>
+        <td class="p-2 border">@kitap.Yazar</td>
+        <td class="p-2 border">@kitap.Kategori.KategoriAd</td>
+
+        <td class="p-2 border">
+            @* Sadece Personel için Güncelle ve Sil *@
+            @if (rol == "Personel")
+            {
+                <button type="button" class="bg-red-500 text-white px-4 py-2 rounded delete-btn" data-id="@kitap.KitapId">
+                    Sil
+                </button>
+                <button>
+                    <a asp-action="Update" asp-route-id="@kitap.KitapId" class="bg-yellow-500 text-white px-4 py-2 rounded">
+                        Güncelle
+                    </a>
+                </button>
+            }
+
+            @* Herkes için Ödünç Al *@
+            <a class="bg-green-500 text-white px-4 py-2 rounded odunc-al-btn"
+               asp-controller="Odunc"
+               asp-action="OduncAl"
+               asp-route-KitapId="@kitap.KitapId">
+                Ödünç Al
+            </a>
+        </td>
+    </tr>
+}

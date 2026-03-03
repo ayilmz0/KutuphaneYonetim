@@ -1,0 +1,106 @@
+﻿@model List<KutuphaneYonetim.Models.Odunc>
+
+@{
+    ViewData["Title"] = "Ödünç Sistemi";
+}
+
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
+}
+
+
+@if (TempData["Uyari"] != null)
+{
+    <div id="temp-message" class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4 inline-block" role="alert">
+        <strong class="font-bold">Uyarı!</strong>
+        <span class="block sm:inline">@TempData["Uyari"]</span>
+    </div>
+}
+
+@if (rol == "Personel")
+{
+    <div id="temp-message" class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4 inline-block" role="alert">
+        <strong class="font-bold">Uyarı!</strong>
+        <span class="block sm:inline">Ödünç alabilmek için "Üye" olmanız gerekmektedir!</span>
+    </div>
+}
+
+@if (rol == "Üye")
+{
+
+    @if (Model.Any())
+    {
+        <h1 class="text-2xl font-bold mb-4">Ödünç Aldığınız Kitaplar</h1>
+
+        <table class="min-w-full border">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="p-2 border">Kitap Adı</th>
+                    <th class="p-2 border">Yazar</th>
+                    <th class="p-2 border">Alış Tarihi</th>
+                    <th class="p-2 border">İade Tarihi</th>
+                    <th class="p-2 border">Ceza Durumu</th>
+                    <th class="p-2 border">İşlemler</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var Odunc in Model)
+                {
+                    <tr id="row-@Odunc.OduncId">
+                        <td class="p-2 border">@Odunc.Kitap?.KitapAd</td>
+                        <td class="p-2 border">@Odunc.Kitap?.Yazar</td>
+                        <td class="p-2 border">@Odunc.AlisTarihi</td>
+                        <td class="p-2 border">@Odunc.IadeTarihi</td>
+                        <td class="p-2 border">@Odunc.HesaplananCeza ₺</td>
+                        <td class="p-2 border">
+                            <button class="bg-green-500 text-white px-4 py-2 rounded teslim-et-btn" data-id="@Odunc.OduncId">
+                                Teslim Et
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<div id="sonuc" class="mt-4"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+
+    $(document).ready(function () {
+        $(".teslim-et-btn").on("click", function (e) {
+            e.preventDefault();
+
+            var btn = $(this);
+            var id = btn.data("id");
+
+            $.ajax({
+                type: "GET",
+                url: "/Odunc/TeslimEt",
+                data: { id: id },
+                success: function (res) {
+                    if (res.success) {
+                        $("#row-" + id).fadeOut(300, function () { $(this).remove(); });
+                        $("#sonuc").html('<p class="text-green-600">' + res.message + '</p>');
+                    } else {
+                        $("#sonuc").html('<p class="text-red-600">' + res.message + '</p>');
+                    }
+                    setTimeout(function () { $("#sonuc").html(''); }, 3000);
+                },
+                error: function () {
+                    $("#sonuc").html('<p class="text-red-600">Sunucu hatası oluştu.</p>');
+                    setTimeout(function () { $("#sonuc").html(''); }, 3000);
+                }
+            });
+        });
+    });
+
+</script>
+

@@ -1,0 +1,99 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Kütüphane Yönetim Sistemi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgb(17 24 39);
+            color: white;
+            padding: 20px;
+        }
+
+        nav a {
+            color: white;
+            margin-right: 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .banner {
+            flex: 1;
+            position: relative;
+            background: url('/images/kutup.jpg') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-direction: column;
+        }
+
+        .banner::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .banner-text {
+            position: relative;
+            z-index: 1;
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+        }
+        .banner-text-1 {
+            position: relative;
+            z-index: 1;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+        }
+
+        .footer {
+            background: rgb(17 24 39);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">Anasayfa</a>
+            <a href="/Kullanici/Register">Giriş</a>
+        </nav>
+    </header>
+
+    <div class="banner">
+        <i><div class="banner-text">Kütüphane Yönetim Sistemi</div></i>
+        <div class="banner-text-1">Aktif Olarak Hizmetinizdeyiz!</div>
+    </div>
+
+    <div class="footer">
+        &copy; 2025 Kütüphane Yönetim Sistemi. Tüm hakları saklıdır.
+    </div>
+</body>
+</html>

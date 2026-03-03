@@ -1,0 +1,23 @@
+﻿@model List<KutuphaneYonetim.Models.Kategori>
+
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
+}
+
+@foreach (var kategori in Model)
+{
+    <tr id="row-@kategori.KategoriId">
+        <td class="p-2 border">@kategori.KategoriAd</td>
+        <td class="p-2 border">
+            @* Sadece Personel Sil butonunu görebilir *@
+            @if (rol == "Personel")
+            {
+                <button type="button" class="bg-red-500 text-white px-4 py-2 rounded delete-btn" data-id="@kategori.KategoriId">
+                    Sil
+                </button>
+            }
+        </td>
+    </tr>
+}

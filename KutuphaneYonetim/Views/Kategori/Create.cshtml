@@ -1,0 +1,53 @@
+﻿@model KutuphaneYonetim.Models.Kategori
+
+@{
+    ViewData["Title"] = "Kategori Ekle";
+}
+
+<h1 class="text-2xl font-bold mb-4">Kategori Ekle</h1>
+
+<form id="kategoriForm" asp-action="Create" method="post" class="max-w-lg bg-gray-100 p-6 rounded shadow-md">
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Kategori Adı</label>
+        <input asp-for="KategoriAd" class="w-full border p-2 rounded" />
+        <span asp-validation-for="KategoriAd" class="text-red-500 text-sm"></span>
+    </div>
+
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-green-600">Ekle</button>
+</form>
+
+<div id="sonuc" class="mt-4"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+
+    $("#kategoriForm").submit(function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            type: "POST",
+            url: "/Kategori/CreateAjax",
+            data: $(this).serialize(),
+            success: function (res) {
+                if (res.success) {
+                    $("#sonuc").html(`<p class="text-green-600">${res.message}</p>`);
+                    setTimeout(function () {
+                        $("#sonuc").html('');
+                    }, 3000);
+
+                    $("#kategoriForm")[0].reset();
+                } else {
+                    $("#sonuc").html(`<p class="text-red-600">${res.message}</p>`);
+                    setTimeout(function () {
+                        $("#sonuc").html('');
+                    }, 3000);
+                }
+            },
+            error: function () {
+                $("#sonuc").html(`<p class="text-red-600">Sunucu hatası oluştu.</p>`);
+            }
+        });
+    });
+
+</script>

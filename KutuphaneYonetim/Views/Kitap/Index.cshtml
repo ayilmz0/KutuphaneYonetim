@@ -1,0 +1,134 @@
+﻿@model List<KutuphaneYonetim.Models.Kitap>
+
+@{
+    ViewData["Title"] = "Kitap";
+}
+
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
+}
+
+<h1 class="text-2xl font-bold mb-4">Kitap Ara</h1>
+
+@if (TempData["Basarili"] != null)
+{
+    <div id="temp-message" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 inline-block" role="alert">
+        <strong class="font-bold">Başarılı!</strong>
+        <span class="block sm:inline">@TempData["Basarili"]</span>
+    </div>
+}
+
+@if (TempData["Hata"] != null)
+{
+    <div id="temp-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 inline-block" role="alert">
+        <strong class="font-bold">Hata!</strong>
+        <span class="block sm:inline">@TempData["Hata"]</span>
+    </div>
+}
+
+<form method="get" class="mb-4">
+    <input type="text" id="searchBox" name="q" value="@ViewBag.Query" placeholder="Kitap adı veya yazar"
+           class="border p-2 rounded w-1/2">
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Ara</button>
+
+    @if (rol == "Personel")
+    {
+        <button asp-action="Create" type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Kitap Ekle</button>
+    }
+</form>
+
+<table class="min-w-full border">
+    <thead>
+        <tr class="bg-gray-200">
+            <th class="p-2 border">Kitap Adı</th>
+            <th class="p-2 border">Yazar</th>
+            <th class="p-2 border">Kategori</th>
+            <th class="p-2 border">İşlemler</th>
+        </tr>
+    </thead>
+    <tbody id="kitapTableBody">
+        @foreach (var kitap in Model)
+        {
+            <tr id="row-@kitap.KitapId">
+                <td class="p-2 border">@kitap.KitapAd</td>
+                <td class="p-2 border">@kitap.Yazar</td>
+                <td class="p-2 border">@kitap.Kategori.KategoriAd</td>
+                <td class="p-2 border">
+
+                    @if (rol == "Personel")
+                    {
+                        <button type="button" class="bg-red-500 text-white px-4 py-2 rounded delete-btn" data-id="@kitap.KitapId">
+                            Sil
+                        </button>
+                        <button>
+                            <a asp-action="Update" asp-route-id="@kitap.KitapId" class="bg-yellow-500 text-white px-4 py-2 rounded">
+                                Güncelle
+                            </a>
+                        </button>
+                    }
+
+                    <a class="bg-green-500 text-white px-4 py-2 rounded odunc-al-btn"
+                       asp-controller="Odunc"
+                       asp-action="OduncAl"
+                       asp-route-KitapId="@kitap.KitapId">
+                        Ödünç Al
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    // Silme işlemi 
+    $(document).on("click", ".delete-btn", function () {
+        if (!confirm("Bu kitabı silmek istediğinizden emin misiniz?")) return;
+
+        var id = $(this).data("id");
+
+        $.ajax({
+            type: "POST",
+            url: "/Kitap/DeleteAjax",
+            data: { id: id },
+            success: function (res) {
+                if (res.success) {
+                    $("#row-" + id).remove();
+                    alert(res.message);
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function () {
+                alert("Sunucu hatası oluştu.");
+            }
+        });
+    });
+
+    // Arama
+    $("#searchBox").on("keyup", function (e) {
+        e.preventDefault();
+        var query = $(this).val();
+
+        $.ajax({
+            type: "GET",
+            url: "/Kitap/AraAjax",
+            data: { q: query },
+            success: function (res) {
+                $("#kitapTableBody").html(res);
+            },
+            error: function () {
+                alert("Arama sırasında hata oluştu.");
+            }
+        });
+    });
+
+    // Temp mesaj gizleme
+    setTimeout(function () {
+        var msg = document.getElementById("temp-message");
+        if (msg) msg.style.display = 'none';
+    }, 3000);
+</script>

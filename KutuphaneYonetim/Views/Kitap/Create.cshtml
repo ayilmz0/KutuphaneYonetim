@@ -1,0 +1,92 @@
+﻿@model KutuphaneYonetim.Models.Kitap
+
+@{
+    ViewData["Title"] = "Kitap Ekle";
+}
+
+<h1 class="text-2xl font-bold mb-4">Kitap Ekle</h1>
+
+<form id="kitapForm" asp-action="Create" method="post" class="max-w-lg bg-gray-100 p-6 rounded shadow-md">
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Kitap Adı</label>
+        <input asp-for="KitapAd" class="w-full border p-2 rounded" />
+        <span asp-validation-for="KitapAd" class="text-red-500 text-sm"></span>
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Yazar</label>
+        <input asp-for="Yazar" class="w-full border p-2 rounded" />
+        <span asp-validation-for="Yazar" class="text-red-500 text-sm"></span>
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Yayın Evi</label>
+        <input asp-for="YayinEvi" class="w-full border p-2 rounded" />
+        <span asp-validation-for="YayinEvi" class="text-red-500 text-sm"></span>
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Sayfa Sayısı</label>
+        <input asp-for="SayfaSayisi" type="number" class="w-full border p-2 rounded" />
+        <span asp-validation-for="SayfaSayisi" class="text-red-500 text-sm"></span>
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">ISBN</label>
+        <input asp-for="ISBN" class="w-full border p-2 rounded" />
+        <span asp-validation-for="ISBN" class="text-red-500 text-sm"></span>
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Stok</label>
+        <input asp-for="Stok" type="number" class="w-full border p-2 rounded" />
+        <span asp-validation-for="Stok" class="text-red-500 text-sm"></span>
+    </div>
+
+    <div class="mb-4">
+    <label class="block font-medium mb-1">Kategori</label>
+    <select asp-for="KategoriId" asp-items="ViewBag.Kategori" class="w-full border p-2 rounded">
+        <option value="">Kategori Seçiniz</option>
+    </select>
+    <span asp-validation-for="KategoriId" class="text-red-500 text-sm"></span>
+</div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Durum</label>
+        <select asp-for="Durum" class="w-full border p-2 rounded">
+            <option value="true">Aktif</option>
+            <option value="false">Pasif</option>
+        </select>
+        <span asp-validation-for="Durum" class="text-red-500 text-sm"></span>
+    </div>
+
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Ekle</button>
+</form>
+
+<div id="sonuc" class="mt-4"></div> 
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $("#kitapForm").submit(function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            type: "POST",
+            url: "/Kitap/CreateAjax",
+            data: $(this).serialize(),
+            success: function (res) {
+                if (res.success) {
+                    $("#sonuc").html(`<p class="text-green-600">${res.message}</p>`);
+                    $("#kitapForm")[0].reset(); 
+                } else {
+                    $("#sonuc").html(`<p class="text-red-600">${res.message}</p>`);
+                }
+            },
+            error: function () {
+                $("#sonuc").html(`<p class="text-red-600">Sunucu hatası oluştu.</p>`);
+            }
+        });
+    });
+
+</script>

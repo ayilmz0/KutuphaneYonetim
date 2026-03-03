@@ -1,0 +1,93 @@
+﻿@model KutuphaneYonetim.Models.Kitap
+@{
+    ViewData["Title"] = "Kitap Güncelle";
+}
+
+<h1 class="text-2xl font-bold mb-4">Kitap Güncelle</h1>
+
+<form id="guncelleForm" method="post" class="max-w-lg bg-gray-100 p-6 rounded shadow-md">
+    @Html.AntiForgeryToken() 
+
+    <input type="hidden" asp-for="KitapId" />
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Kitap Adı</label>
+        <input asp-for="KitapAd" class="w-full border p-2 rounded" />
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Yazar</label>
+        <input asp-for="Yazar" class="w-full border p-2 rounded" />
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Yayın Evi</label>
+        <input asp-for="YayinEvi" class="w-full border p-2 rounded" />
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Sayfa Sayısı</label>
+        <input asp-for="SayfaSayisi" type="number" class="w-full border p-2 rounded" />
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">ISBN</label>
+        <input asp-for="ISBN" class="w-full border p-2 rounded" />
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Stok</label>
+        <input asp-for="Stok" type="number" class="w-full border p-2 rounded" />
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Kategori</label>
+        <select asp-for="KategoriId" asp-items="ViewBag.Kategori" class="w-full border p-2 rounded">
+            <option value="0">Kategori Seçiniz</option>
+        </select>
+    </div>
+
+    <div class="mb-4">
+        <label class="block font-medium mb-1">Durum</label>
+        <select asp-for="Durum" class="w-full border p-2 rounded">
+            <option value="true">Aktif</option>
+            <option value="false">Pasif</option>
+        </select>
+    </div>
+
+    <button type="submit" class="bg-yellow-500 text-white px-4 py-2 rounded">Güncelle</button>
+</form>
+
+<div id="sonuc" class="mt-4"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+
+    $("#guncelleForm").submit(function (e) {
+        e.preventDefault();
+
+        var form = $(this);
+        var token = $('input[name="__RequestVerificationToken"]', form).val(); 
+
+        $.ajax({
+            type: "POST",
+            url: "/Kitap/UpdateAjax",
+            data: form.serialize(),  
+            headers: {
+                "RequestVerificationToken": token 
+            },
+            success: function (res) {
+                if (res.success) {
+                    $("#sonuc").html(`<p class="text-green-600">${res.message}</p>`);
+                } else {
+                    $("#sonuc").html(`<p class="text-red-600">${res.message}</p>`);
+                }
+            },
+            error: function (xhr) {
+                $("#sonuc").html(`<p class="text-red-600">Sunucu hatası: ${xhr.status}</p>`);
+            }
+        });
+    });
+
+</script>
