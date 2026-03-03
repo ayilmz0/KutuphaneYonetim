@@ -7,7 +7,7 @@ namespace KutuphaneYonetim.Context
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Data Source=ABDULLAH\\SQLEXPRESS; database=KutuphaneYonetimSistemiDb; Integrated Security=true; TrustServerCertificate=true;");
+            
         }
         public KutuphaneYonetimContext(DbContextOptions<KutuphaneYonetimContext> options)
             : base(options)
