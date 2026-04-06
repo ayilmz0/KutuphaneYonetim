@@ -6,7 +6,7 @@
 <h1 class="text-2xl font-bold mb-4">Kitap Güncelle</h1>
 
 <form id="guncelleForm" method="post" class="max-w-lg bg-gray-100 p-6 rounded shadow-md">
-    @Html.AntiForgeryToken() 
+    @Html.AntiForgeryToken()
 
     <input type="hidden" asp-for="KitapId" />
 
@@ -67,27 +67,28 @@
     $("#guncelleForm").submit(function (e) {
         e.preventDefault();
 
-        var form = $(this);
-        var token = $('input[name="__RequestVerificationToken"]', form).val(); 
+        // Formun içindeki gizli input'tan Kitap ID'sini alıyoruz
+        var id = $("#KitapId").val();
 
         $.ajax({
-            type: "POST",
-            url: "/Kitap/UpdateAjax",
-            data: form.serialize(),  
-            headers: {
-                "RequestVerificationToken": token 
-            },
+            type: "PUT",
+            url: "/api/Kitap/" + id,
+            data: $(this).serialize(),
             success: function (res) {
                 if (res.success) {
-                    $("#sonuc").html(`<p class="text-green-600">${res.message}</p>`);
+                    // Başarılıysa div içine yazdırıp 1 saniye sonra listeye yönlendirebilirsin
+                    $("#sonuc").html(`<p class="text-green-600 font-bold">${res.message} Yönlendiriliyorsunuz...</p>`);
+                    setTimeout(function () {
+                        window.location.href = "/Kitap/Index";
+                    }, 1000);
                 } else {
-                    $("#sonuc").html(`<p class="text-red-600">${res.message}</p>`);
+                    $("#sonuc").html(`<p class="text-red-600 font-bold">${res.message}</p>`);
                 }
             },
-            error: function (xhr) {
-                $("#sonuc").html(`<p class="text-red-600">Sunucu hatası: ${xhr.status}</p>`);
+            error: function () {
+                $("#sonuc").html(`<p class="text-red-600 font-bold">Sunucu hatası oluştu.</p>`);
             }
         });
     });
-
 </script>
+

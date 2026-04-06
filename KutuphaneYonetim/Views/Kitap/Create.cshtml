@@ -68,17 +68,18 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+
     $("#kitapForm").submit(function (e) {
         e.preventDefault();
 
         $.ajax({
             type: "POST",
-            url: "/Kitap/CreateAjax",
+            url: "/api/Kitap", // BURASI DEĞİŞTİ: Artık direkt API'ye POST atıyoruz
             data: $(this).serialize(),
             success: function (res) {
                 if (res.success) {
                     $("#sonuc").html(`<p class="text-green-600">${res.message}</p>`);
-                    $("#kitapForm")[0].reset(); 
+                    $("#kitapForm")[0].reset();
                 } else {
                     $("#sonuc").html(`<p class="text-red-600">${res.message}</p>`);
                 }
