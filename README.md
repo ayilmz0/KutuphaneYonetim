@@ -16,6 +16,6 @@ kullanıcı işlemleri ve ödünç/alma süreçlerini güvenli bir şekilde ger�
 - Rol tabanlı yetkilendirme (Admin/Kullanıcı)  
 - Kitap ve kullanıcı yönetimi  
 - Kitap ödünç alma ve iade işlemleri  
-- RESTful mimari ve iyi uygulama standartlarına uygun endpoint tasarımı  
+- Web API(RESTful mimari) ve iyi uygulama standartlarına uygun endpoint tasarımı  
 - Katmanlı mimari: Controller → Service → Repository  
 - Veri doğrulama ve hata yönetimi  
