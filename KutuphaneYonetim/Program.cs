@@ -1,5 +1,8 @@
 ﻿using KutuphaneYonetim.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +24,30 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// JWT Ayarlarını appsettings.json'dan okuma
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["Key"];
+
+// Kimlik Doğrulama (Authentication) servisini JWT olarak ayarlama
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, // Kartı basan doğru kişi mi?
+        ValidateAudience = true, // Kart doğru yere mi verilmiş?
+        ValidateLifetime = true, // Kartın süresi dolmuş mu?
+        ValidateIssuerSigningKey = true, // İmza doğru mu?
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+    };
+});
+
 var app = builder.Build();
 
 // Middleware
@@ -33,6 +60,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // ✅ Session middleware
 app.UseSession();

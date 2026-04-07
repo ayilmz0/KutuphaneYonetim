@@ -1,30 +1,55 @@
-﻿using KutuphaneYonetim.Context;
-using KutuphaneYonetim.Models;
+﻿using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace KutuphaneYonetim.Controllers
 {
     public class OduncController : Controller
     {
-        private readonly KutuphaneYonetimContext _context;
+        private readonly HttpClient _httpClient;
 
-        public OduncController(KutuphaneYonetimContext context)
+        public OduncController(IHttpClientFactory httpClientFactory)
         {
-            _context = context;
+            _httpClient = httpClientFactory.CreateClient();
+            _httpClient.BaseAddress = new Uri("https://localhost:44379/");
         }
-        public IActionResult Index()
+
+        // Token'ı HttpClient'a eklemek için yardımcı bir metod (Sürekli aynı kodu yazmamak için)
+        private bool SetAuthorizationHeader()
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (string.IsNullOrEmpty(token)) return false;
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return true;
+        }
+
+        public async Task<IActionResult> Index()
         {
             var uyeIdStr = HttpContext.Session.GetString("UyeId");
-            if (!int.TryParse(uyeIdStr, out int uyeId))
+            if (!SetAuthorizationHeader() || string.IsNullOrEmpty(uyeIdStr))
             {
-                return View(new List<Odunc>());
+                return RedirectToAction("Login", "Kullanici");
             }
 
-            var oduncler = _context.Odunc
-                .Include(o => o.Kitap)
-                .Where(o => o.UyeId == uyeId)
-                .ToList();
+            List<Odunc> oduncler = new List<Odunc>();
+
+            // Artık API'ye giderken başlığımızda Token var!
+            var response = await _httpClient.GetAsync($"api/Odunc/Uye/{uyeIdStr}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                oduncler = JsonSerializer.Deserialize<List<Odunc>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // Token süresi dolmuşsa
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Kullanici");
+            }
 
             if (!oduncler.Any())
                 TempData["Uyari"] = "Henüz ödünç alınmış kitap bulunmamaktadır.";
@@ -33,101 +58,51 @@ namespace KutuphaneYonetim.Controllers
         }
 
         [HttpGet]
-        public IActionResult OduncAl(int KitapId)
+        public async Task<IActionResult> OduncAl(int KitapId)
         {
-            var uyeIdStr = HttpContext.Session.GetString("UyeId");
-            var kullaniciIdStr = HttpContext.Session.GetString("KullaniciId");
-
-            if (!int.TryParse(uyeIdStr, out int uyeId) || !int.TryParse(kullaniciIdStr, out int kullaniciId))
+            if (!SetAuthorizationHeader())
             {
                 TempData["Hata"] = "Kitap ödünç almak için giriş yapmalısınız.";
-                return RedirectToAction("Index", "Kitap");
+                return RedirectToAction("Login", "Kullanici");
             }
 
-            var kitap = _context.Kitap
-                .AsNoTracking()
-                .FirstOrDefault(k => k.KitapId == KitapId);
+            // DİKKAT: Artık API'ye UyeId veya KullaniciId GÖNDERMİYORUZ!
+            // Sadece hangi kitabı istediğimizi söylüyoruz. API bizim kim olduğumuzu Token'dan bilecek.
+            var istekData = new { KitapId = KitapId };
+            var content = new StringContent(JsonSerializer.Serialize(istekData), Encoding.UTF8, "application/json");
 
-            if (kitap == null)
+            var response = await _httpClient.PostAsync("api/Odunc/OduncAl", content);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var apiResult = JsonSerializer.Deserialize<JsonElement>(responseString);
+
+            if (response.IsSuccessStatusCode)
             {
-                TempData["Hata"] = "Kitap bulunamadı.";
-                return RedirectToAction("Index", "Kitap");
+                TempData["Basarili"] = apiResult.GetProperty("message").GetString();
+            }
+            else
+            {
+                TempData["Hata"] = apiResult.TryGetProperty("message", out var msg) ? msg.GetString() : "Bir hata oluştu.";
             }
 
-            if (kitap.Stok <= 0)
-            {
-                TempData["Hata"] = "Kitabın stoğu kalmamış.";
-                return RedirectToAction("Index", "Kitap");
-            }
-
-            bool zatenAlindi = _context.Odunc.Any(o => o.KitapId == KitapId && o.UyeId == uyeId && o.Durum == false);
-            if (zatenAlindi)
-            {
-                TempData["Hata"] = "Bu kitabı zaten ödünç aldınız ve henüz teslim etmediniz.";
-                return RedirectToAction("Index", "Kitap");
-            }
-
-            var odunc = new Odunc
-            {
-                KitapId = KitapId,
-                UyeId = uyeId,
-                KullaniciId = kullaniciId,
-                AlisTarihi = DateTime.Now,
-                IadeTarihi = DateTime.Now.AddDays(15),
-                Durum = false
-            };
-
-            kitap.Stok -= 1;
-            _context.Kitap.Update(kitap);
-            _context.Odunc.Add(odunc);
-            _context.SaveChanges();
-
-            TempData["Basarili"] = $"Kitap başarıyla ödünç alındı! İade tarihi: {odunc.IadeTarihi:dd.MM.yyyy}";
             return RedirectToAction("Index", "Kitap");
         }
 
-      
-        [HttpGet]
-        public IActionResult TeslimEt(int id)
+        [HttpPost]
+        public async Task<IActionResult> TeslimEtAjax(int id)
         {
-            var odunc = _context.Odunc
-                .Include(o => o.Uye)   
-                .Include(o => o.Kitap) 
-                .FirstOrDefault(o => o.OduncId == id);
-
-            if (odunc == null || odunc.Uye == null)
-                return Json(new { success = false, message = "Ödünç kaydı veya üye bulunamadı." });
-
-            var kitap = odunc.Kitap;
-            if (kitap != null)
-                kitap.Stok += 1;
-
-            // Ceza hesaplama
-            decimal ceza = odunc.HesaplananCeza;
-
-            var okunan = new OkunanKitaplar
+            if (!SetAuthorizationHeader())
             {
-                KullaniciId = odunc.KullaniciId != 0 ? odunc.KullaniciId : odunc.Uye.KullaniciId,
-                UyeId = odunc.UyeId,
-                KitapId = odunc.KitapId,
-                KategoriId = kitap?.KategoriId ?? 0,
-                AlisTarihi = odunc.AlisTarihi,
-                IadeTarihi = odunc.IadeTarihi,
-                Durum = true,
-                Kitap = kitap
-            };
+                return Json(new { success = false, message = "Oturum süreniz dolmuş." });
+            }
 
-            _context.OkunanKitaplar.Add(okunan);
-            _context.Odunc.Remove(odunc);
-            _context.Kitap.Update(kitap);
-            _context.SaveChanges();
+            var response = await _httpClient.PostAsync($"api/Odunc/TeslimEt/{id}", null);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var apiResult = JsonSerializer.Deserialize<JsonElement>(responseString);
 
+            bool success = apiResult.TryGetProperty("success", out var succ) && succ.GetBoolean();
+            string message = apiResult.TryGetProperty("message", out var msg) ? msg.GetString() : "İşlem sonucu okunamadı.";
 
-            string mesaj = ceza > 0
-                ? $"Kitap teslim edildi, ancak {ceza}₺ gecikme cezası uygulandı."
-                : "Kitap başarıyla teslim edildi!";
-
-            return Json(new { success = true, message = mesaj });
+            return Json(new { success = success, message = message });
         }
     }
 }
