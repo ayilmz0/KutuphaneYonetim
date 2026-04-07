@@ -27,14 +27,14 @@
 
         $.ajax({
             type: "POST",
-            url: "/Kategori/CreateAjax",
+            url: "/api/Kategori", 
             data: $(this).serialize(),
             success: function (res) {
                 if (res.success) {
-                    $("#sonuc").html(`<p class="text-green-600">${res.message}</p>`);
+                    $("#sonuc").html(`<p class="text-green-600">${res.message} Yönlendiriliyorsunuz...</p>`);
                     setTimeout(function () {
-                        $("#sonuc").html('');
-                    }, 3000);
+                        window.location.href = "/Kategori/Index";
+                    }, 1000);
 
                     $("#kategoriForm")[0].reset();
                 } else {
@@ -44,8 +44,13 @@
                     }, 3000);
                 }
             },
-            error: function () {
-                $("#sonuc").html(`<p class="text-red-600">Sunucu hatası oluştu.</p>`);
+            error: function (xhr) {
+                // API'den dönen BadRequest (400) mesajlarını yakalamak istersen:
+                var errorMessage = "Sunucu hatası oluştu.";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                $("#sonuc").html(`<p class="text-red-600">${errorMessage}</p>`);
             }
         });
     });
