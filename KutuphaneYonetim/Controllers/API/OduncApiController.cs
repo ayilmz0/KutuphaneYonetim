@@ -1,10 +1,13 @@
 ﻿using KutuphaneYonetim.Context;
 using KutuphaneYonetim.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace KutuphaneYonetim.Controllers.Api
 {
+    [Authorize]
     [Route("api/Odunc")]
     [ApiController]
     public class OduncApiController : ControllerBase
@@ -32,6 +35,18 @@ namespace KutuphaneYonetim.Controllers.Api
         [HttpPost("OduncAl")]
         public IActionResult OduncAl([FromBody] OduncIstekDto istek)
         {
+            // Kullanıcının kim olduğunu Token'dan (Claims) okuyoruz!
+            var kullaniciIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(kullaniciIdStr) || !int.TryParse(kullaniciIdStr, out int kullaniciId))
+                return Unauthorized(new { success = false, message = "Kimlik doğrulanamadı." });
+
+            // KullaniciId üzerinden UyeId'yi veritabanından güvenli bir şekilde buluyoruz
+            var uye = _context.Uye.FirstOrDefault(u => u.KullaniciId == kullaniciId);
+
+            if (uye == null)
+                return BadRequest(new { success = false, message = "Sadece üyeler kitap ödünç alabilir." });
+
             var kitap = _context.Kitap.FirstOrDefault(k => k.KitapId == istek.KitapId);
 
             if (kitap == null)
@@ -40,15 +55,15 @@ namespace KutuphaneYonetim.Controllers.Api
             if (kitap.Stok <= 0)
                 return BadRequest(new { success = false, message = "Kitabın stoğu kalmamış." });
 
-            bool zatenAlindi = _context.Odunc.Any(o => o.KitapId == istek.KitapId && o.UyeId == istek.UyeId && o.Durum == false);
+            bool zatenAlindi = _context.Odunc.Any(o => o.KitapId == istek.KitapId && o.UyeId == uye.UyeId && o.Durum == false);
             if (zatenAlindi)
                 return BadRequest(new { success = false, message = "Bu kitabı zaten ödünç aldınız ve henüz teslim etmediniz." });
 
             var odunc = new Odunc
             {
                 KitapId = istek.KitapId,
-                UyeId = istek.UyeId,
-                KullaniciId = istek.KullaniciId,
+                UyeId = uye.UyeId,          // Token'dan bulduğumuz UyeId
+                KullaniciId = kullaniciId,  // Token'dan okuduğumuz KullaniciId
                 AlisTarihi = DateTime.Now,
                 IadeTarihi = DateTime.Now.AddDays(15),
                 Durum = false
@@ -105,11 +120,9 @@ namespace KutuphaneYonetim.Controllers.Api
         }
     }
 
-    // API'ye veri göndermek için kullanacağımız basit bir model
+    // DTO'dan gereksiz verileri sildik, sadece KitapId kaldı.
     public class OduncIstekDto
     {
         public int KitapId { get; set; }
-        public int UyeId { get; set; }
-        public int KullaniciId { get; set; }
     }
 }

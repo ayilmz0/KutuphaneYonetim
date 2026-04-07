@@ -1,5 +1,6 @@
 ﻿using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -15,23 +16,39 @@ namespace KutuphaneYonetim.Controllers
             _httpClient.BaseAddress = new Uri("https://localhost:44379/");
         }
 
+        // Token'ı HttpClient'a eklemek için yardımcı bir metod (Sürekli aynı kodu yazmamak için)
+        private bool SetAuthorizationHeader()
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (string.IsNullOrEmpty(token)) return false;
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return true;
+        }
+
         public async Task<IActionResult> Index()
         {
             var uyeIdStr = HttpContext.Session.GetString("UyeId");
-            if (!int.TryParse(uyeIdStr, out int uyeId))
+            if (!SetAuthorizationHeader() || string.IsNullOrEmpty(uyeIdStr))
             {
-                return View(new List<Odunc>());
+                return RedirectToAction("Login", "Kullanici");
             }
 
             List<Odunc> oduncler = new List<Odunc>();
 
-            // API'den sadece bu üyeye ait ödünçleri çekiyoruz
-            var response = await _httpClient.GetAsync($"api/Odunc/Uye/{uyeId}");
+            // Artık API'ye giderken başlığımızda Token var!
+            var response = await _httpClient.GetAsync($"api/Odunc/Uye/{uyeIdStr}");
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 oduncler = JsonSerializer.Deserialize<List<Odunc>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                // Token süresi dolmuşsa
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Kullanici");
             }
 
             if (!oduncler.Any())
@@ -43,20 +60,17 @@ namespace KutuphaneYonetim.Controllers
         [HttpGet]
         public async Task<IActionResult> OduncAl(int KitapId)
         {
-            var uyeIdStr = HttpContext.Session.GetString("UyeId");
-            var kullaniciIdStr = HttpContext.Session.GetString("KullaniciId");
-
-            if (!int.TryParse(uyeIdStr, out int uyeId) || !int.TryParse(kullaniciIdStr, out int kullaniciId))
+            if (!SetAuthorizationHeader())
             {
                 TempData["Hata"] = "Kitap ödünç almak için giriş yapmalısınız.";
-                return RedirectToAction("Index", "Kitap");
+                return RedirectToAction("Login", "Kullanici");
             }
 
-            // API'ye göndereceğimiz paketi hazırlıyoruz
-            var istekData = new { KitapId = KitapId, UyeId = uyeId, KullaniciId = kullaniciId };
+            // DİKKAT: Artık API'ye UyeId veya KullaniciId GÖNDERMİYORUZ!
+            // Sadece hangi kitabı istediğimizi söylüyoruz. API bizim kim olduğumuzu Token'dan bilecek.
+            var istekData = new { KitapId = KitapId };
             var content = new StringContent(JsonSerializer.Serialize(istekData), Encoding.UTF8, "application/json");
 
-            // API'ye POST isteği atıyoruz
             var response = await _httpClient.PostAsync("api/Odunc/OduncAl", content);
             var responseString = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<JsonElement>(responseString);
@@ -67,7 +81,7 @@ namespace KutuphaneYonetim.Controllers
             }
             else
             {
-                TempData["Hata"] = apiResult.GetProperty("message").GetString();
+                TempData["Hata"] = apiResult.TryGetProperty("message", out var msg) ? msg.GetString() : "Bir hata oluştu.";
             }
 
             return RedirectToAction("Index", "Kitap");
@@ -76,13 +90,17 @@ namespace KutuphaneYonetim.Controllers
         [HttpPost]
         public async Task<IActionResult> TeslimEtAjax(int id)
         {
-            // İsteği doğrudan API'nin teslim etme ucuna POSTluyoruz
+            if (!SetAuthorizationHeader())
+            {
+                return Json(new { success = false, message = "Oturum süreniz dolmuş." });
+            }
+
             var response = await _httpClient.PostAsync($"api/Odunc/TeslimEt/{id}", null);
             var responseString = await response.Content.ReadAsStringAsync();
             var apiResult = JsonSerializer.Deserialize<JsonElement>(responseString);
 
-            bool success = apiResult.GetProperty("success").GetBoolean();
-            string message = apiResult.GetProperty("message").GetString();
+            bool success = apiResult.TryGetProperty("success", out var succ) && succ.GetBoolean();
+            string message = apiResult.TryGetProperty("message", out var msg) ? msg.GetString() : "İşlem sonucu okunamadı.";
 
             return Json(new { success = success, message = message });
         }

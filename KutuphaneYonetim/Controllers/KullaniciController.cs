@@ -1,18 +1,18 @@
-﻿using KutuphaneYonetim.Context;
-using KutuphaneYonetim.Models;
+﻿using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
+using System.Text;
+using System.Text.Json;
 
 namespace KutuphaneYonetim.Controllers
 {
     public class KullaniciController : Controller
     {
-        private readonly KutuphaneYonetimContext _context;
+        private readonly HttpClient _httpClient;
 
-        public KullaniciController(KutuphaneYonetimContext context)
+        public KullaniciController(IHttpClientFactory httpClientFactory)
         {
-            _context = context;
+            _httpClient = httpClientFactory.CreateClient();
+            _httpClient.BaseAddress = new Uri("https://localhost:44379/"); 
         }
 
         [HttpGet]
@@ -22,50 +22,21 @@ namespace KutuphaneYonetim.Controllers
         }
 
         [HttpPost]
-        public IActionResult Register(Kullanici kullanici)
+        public async Task<IActionResult> Register(Kullanici kullanici)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(kullanici);
+
+            var content = new StringContent(JsonSerializer.Serialize(kullanici), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("api/Auth/Register", content);
+
+            if (response.IsSuccessStatusCode)
             {
-                kullanici.Sifre = BCrypt.Net.BCrypt.HashPassword(kullanici.Sifre);
-
-                _context.Kullanici.Add(kullanici);
-                _context.SaveChanges();
-
-                HttpContext.Session.SetString("KullaniciId", kullanici.KullaniciId.ToString());
-                HttpContext.Session.SetString("Email", kullanici.Email);
-                HttpContext.Session.SetString("Rol", kullanici.Rol);
-
-                if (kullanici.Rol == "Üye")
-                {
-                    Uye uye = new Uye
-                    {
-                        Ad = kullanici.Ad,
-                        Soyad = kullanici.Soyad,
-                        KayitTarihi = DateTime.Now,
-                        Durum = true,
-                        KullaniciId = kullanici.KullaniciId
-                    };
-                    _context.Uye.Add(uye);
-                    _context.SaveChanges();
-
-                    HttpContext.Session.SetString("UyeId", uye.UyeId.ToString());
-                }
-                else if (kullanici.Rol == "Personel")
-                {
-                    Personel personel = new Personel
-                    {
-                        PersonelAd = kullanici.Ad,
-                        PersonelSoyad = kullanici.Soyad,
-                        Durum = true,
-                        KullaniciId = kullanici.KullaniciId
-                    };
-                    _context.Personel.Add(personel);
-                    _context.SaveChanges();
-
-                    HttpContext.Session.SetString("PersonelId", personel.PersonelId.ToString());
-                }
-                return RedirectToAction("Index", "Home");
+                // Kayıt başarılıysa direkt login sayfasına (veya Home'a) yönlendir
+                return RedirectToAction("Login");
             }
+
+            ModelState.AddModelError("", "Kayıt işlemi başarısız oldu.");
             return View(kullanici);
         }
 
@@ -76,35 +47,34 @@ namespace KutuphaneYonetim.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string Email, string Sifre)
+        public async Task<IActionResult> Login(string Email, string Sifre)
         {
-            var kullanici = _context.Kullanici
-                .FirstOrDefault(k => k.Email.ToLower() == Email.ToLower());
+            var istek = new { Email = Email, Sifre = Sifre };
+            var content = new StringContent(JsonSerializer.Serialize(istek), Encoding.UTF8, "application/json");
 
-            if (kullanici != null && BCrypt.Net.BCrypt.Verify(Sifre, kullanici.Sifre))
+            var response = await _httpClient.PostAsync("api/Auth/Login", content);
+
+            if (response.IsSuccessStatusCode)
             {
-                HttpContext.Session.SetString("KullaniciId", kullanici.KullaniciId.ToString());
-                HttpContext.Session.SetString("Email", kullanici.Email);
-                HttpContext.Session.SetString("Rol", kullanici.Rol);
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
-                if (kullanici.Rol == "Üye")
-                {
-                    var uye = _context.Uye.FirstOrDefault(u => u.KullaniciId == kullanici.KullaniciId);
-                    if (uye != null)
-                        HttpContext.Session.SetString("UyeId", uye.UyeId.ToString());
-                    else
-                        TempData["Hata"] = "Bu kullanıcı için üye kaydı bulunamadı.";
-                }
-                else if (kullanici.Rol == "Personel")
-                {
-                    var personel = _context.Personel.FirstOrDefault(p => p.KullaniciId == kullanici.KullaniciId);
-                    if (personel != null)
-                        HttpContext.Session.SetString("PersonelId", personel.PersonelId.ToString());
-                    else
-                        TempData["Hata"] = "Bu kullanıcı için personel kaydı bulunamadı.";
-                }
+                // API'den gelen verileri alıp Session'a koyuyoruz
+                HttpContext.Session.SetString("JwtToken", result.GetProperty("token").GetString());
+                HttpContext.Session.SetString("KullaniciId", result.GetProperty("kullaniciId").GetInt32().ToString());
+                HttpContext.Session.SetString("Email", result.GetProperty("email").GetString());
+                HttpContext.Session.SetString("Rol", result.GetProperty("rol").GetString());
+
+                // Null gelme ihtimaline karşı kontrol (UyeId ve PersonelId)
+                if (result.TryGetProperty("uyeId", out var uyeIdProp) && uyeIdProp.ValueKind != JsonValueKind.Null)
+                    HttpContext.Session.SetString("UyeId", uyeIdProp.GetInt32().ToString());
+
+                if (result.TryGetProperty("personelId", out var perIdProp) && perIdProp.ValueKind != JsonValueKind.Null)
+                    HttpContext.Session.SetString("PersonelId", perIdProp.GetInt32().ToString());
+
                 return RedirectToAction("Index", "Home");
             }
+
             ModelState.AddModelError("", "Geçersiz Email veya Şifre.");
             return View("Register");
         }

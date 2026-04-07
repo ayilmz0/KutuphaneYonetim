@@ -1,69 +1,56 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using KutuphaneYonetim.Context;
-using KutuphaneYonetim.Models;
-using System;
-using System.Linq;
+﻿using KutuphaneYonetim.Models;
+using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace KutuphaneYonetim.Controllers
 {
     public class ProfilController : Controller
     {
-        private readonly KutuphaneYonetimContext _context;
+        private readonly HttpClient _httpClient;
 
-        public ProfilController(KutuphaneYonetimContext context)
+        public ProfilController(IHttpClientFactory httpClientFactory)
         {
-            _context = context;
+            _httpClient = httpClientFactory.CreateClient();
+            _httpClient.BaseAddress = new Uri("https://localhost:44379/");
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var kullaniciIdStr = HttpContext.Session.GetString("KullaniciId");
-            if (string.IsNullOrEmpty(kullaniciIdStr) || !int.TryParse(kullaniciIdStr, out int kullaniciId))
+            var token = HttpContext.Session.GetString("JwtToken");
+
+            // Eğer ID yoksa veya Session'da Token yoksa, direkt Login'e yolla
+            if (string.IsNullOrEmpty(kullaniciIdStr) || string.IsNullOrEmpty(token))
             {
                 return RedirectToAction("Login", "Kullanici");
             }
 
-            var kullanici = _context.Kullanici.FirstOrDefault(k => k.KullaniciId == kullaniciId);
-            if (kullanici == null)
+            // DİKKAT: API'ye giderken cebimizdeki Token'ı kimlik olarak gösteriyoruz!
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            // API'ye GET isteği atıyoruz
+            var response = await _httpClient.GetAsync($"api/Profil/{kullaniciIdStr}");
+
+            if (response.IsSuccessStatusCode)
             {
-                return View(new Profil
-                {
-                    AdSoyad = "Bilinmiyor",
-                    Email = "Bilinmiyor",
-                    Rol = "Bilinmiyor",
-                    KayitTarihi = null,
-                    Durum = false
-                });
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                // API'den gelen veriyi Profil modelimize dönüştürüyoruz
+                var profil = JsonSerializer.Deserialize<Profil>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return View(profil);
             }
 
-            var model = new Profil
+            // Eğer API "Unauthorized" (401) dönerse, yani Token'ın süresi dolmuşsa veya sahteyse
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                AdSoyad = $"{kullanici.Ad} {kullanici.Soyad}",
-                Email = kullanici.Email,
-                Rol = kullanici.Rol,
-                KayitTarihi = null,
-                Durum = false
-            };
-
-            if (kullanici.Rol == "Üye")
-            {
-                var uye = _context.Uye.FirstOrDefault(u => u.KullaniciId == kullanici.KullaniciId);
-                if (uye != null)
-                {
-                    model.KayitTarihi = uye.KayitTarihi;
-                    model.Durum = uye.Durum;
-                }
+                HttpContext.Session.Clear();
+                TempData["Hata"] = "Oturum süreniz doldu, lütfen tekrar giriş yapın.";
+                return RedirectToAction("Login", "Kullanici");
             }
 
-            if (kullanici.Rol == "Personel")
-            {
-                var personel = _context.Personel.FirstOrDefault(u => u.KullaniciId == kullanici.KullaniciId);
-                if (personel != null)
-                {
-                    model.Durum = personel.Durum;
-                }
-            }
-            return View(model);
+            // Başka bir hata olduysa boş model dön
+            return View(new Profil());
         }
     }
 }
