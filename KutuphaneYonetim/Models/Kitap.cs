@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace KutuphaneYonetim.Models
 {
@@ -14,6 +15,8 @@ namespace KutuphaneYonetim.Models
         public string ISBN { get; set; }
         public int Stok { get; set; }
         public bool Durum { get; set; }
+
+        [ValidateNever]
         public Kategori Kategori { get; set; }  
     }
 }
