@@ -1,19 +1,21 @@
-﻿using KutuphaneYonetim.Context;
-using KutuphaneYonetim.Models;
+﻿using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Text;
+using System.Text.Json;
 
 namespace KutuphaneYonetim.Controllers
 {
     public class OduncController : Controller
     {
-        private readonly KutuphaneYonetimContext _context;
+        private readonly HttpClient _httpClient;
 
-        public OduncController(KutuphaneYonetimContext context)
+        public OduncController(IHttpClientFactory httpClientFactory)
         {
-            _context = context;
+            _httpClient = httpClientFactory.CreateClient();
+            _httpClient.BaseAddress = new Uri("https://localhost:44379/");
         }
-        public IActionResult Index()
+
+        public async Task<IActionResult> Index()
         {
             var uyeIdStr = HttpContext.Session.GetString("UyeId");
             if (!int.TryParse(uyeIdStr, out int uyeId))
@@ -21,10 +23,16 @@ namespace KutuphaneYonetim.Controllers
                 return View(new List<Odunc>());
             }
 
-            var oduncler = _context.Odunc
-                .Include(o => o.Kitap)
-                .Where(o => o.UyeId == uyeId)
-                .ToList();
+            List<Odunc> oduncler = new List<Odunc>();
+
+            // API'den sadece bu üyeye ait ödünçleri çekiyoruz
+            var response = await _httpClient.GetAsync($"api/Odunc/Uye/{uyeId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                oduncler = JsonSerializer.Deserialize<List<Odunc>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
 
             if (!oduncler.Any())
                 TempData["Uyari"] = "Henüz ödünç alınmış kitap bulunmamaktadır.";
@@ -33,7 +41,7 @@ namespace KutuphaneYonetim.Controllers
         }
 
         [HttpGet]
-        public IActionResult OduncAl(int KitapId)
+        public async Task<IActionResult> OduncAl(int KitapId)
         {
             var uyeIdStr = HttpContext.Session.GetString("UyeId");
             var kullaniciIdStr = HttpContext.Session.GetString("KullaniciId");
@@ -44,90 +52,39 @@ namespace KutuphaneYonetim.Controllers
                 return RedirectToAction("Index", "Kitap");
             }
 
-            var kitap = _context.Kitap
-                .AsNoTracking()
-                .FirstOrDefault(k => k.KitapId == KitapId);
+            // API'ye göndereceğimiz paketi hazırlıyoruz
+            var istekData = new { KitapId = KitapId, UyeId = uyeId, KullaniciId = kullaniciId };
+            var content = new StringContent(JsonSerializer.Serialize(istekData), Encoding.UTF8, "application/json");
 
-            if (kitap == null)
+            // API'ye POST isteği atıyoruz
+            var response = await _httpClient.PostAsync("api/Odunc/OduncAl", content);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var apiResult = JsonSerializer.Deserialize<JsonElement>(responseString);
+
+            if (response.IsSuccessStatusCode)
             {
-                TempData["Hata"] = "Kitap bulunamadı.";
-                return RedirectToAction("Index", "Kitap");
+                TempData["Basarili"] = apiResult.GetProperty("message").GetString();
+            }
+            else
+            {
+                TempData["Hata"] = apiResult.GetProperty("message").GetString();
             }
 
-            if (kitap.Stok <= 0)
-            {
-                TempData["Hata"] = "Kitabın stoğu kalmamış.";
-                return RedirectToAction("Index", "Kitap");
-            }
-
-            bool zatenAlindi = _context.Odunc.Any(o => o.KitapId == KitapId && o.UyeId == uyeId && o.Durum == false);
-            if (zatenAlindi)
-            {
-                TempData["Hata"] = "Bu kitabı zaten ödünç aldınız ve henüz teslim etmediniz.";
-                return RedirectToAction("Index", "Kitap");
-            }
-
-            var odunc = new Odunc
-            {
-                KitapId = KitapId,
-                UyeId = uyeId,
-                KullaniciId = kullaniciId,
-                AlisTarihi = DateTime.Now,
-                IadeTarihi = DateTime.Now.AddDays(15),
-                Durum = false
-            };
-
-            kitap.Stok -= 1;
-            _context.Kitap.Update(kitap);
-            _context.Odunc.Add(odunc);
-            _context.SaveChanges();
-
-            TempData["Basarili"] = $"Kitap başarıyla ödünç alındı! İade tarihi: {odunc.IadeTarihi:dd.MM.yyyy}";
             return RedirectToAction("Index", "Kitap");
         }
 
-      
-        [HttpGet]
-        public IActionResult TeslimEt(int id)
+        [HttpPost]
+        public async Task<IActionResult> TeslimEtAjax(int id)
         {
-            var odunc = _context.Odunc
-                .Include(o => o.Uye)   
-                .Include(o => o.Kitap) 
-                .FirstOrDefault(o => o.OduncId == id);
+            // İsteği doğrudan API'nin teslim etme ucuna POSTluyoruz
+            var response = await _httpClient.PostAsync($"api/Odunc/TeslimEt/{id}", null);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var apiResult = JsonSerializer.Deserialize<JsonElement>(responseString);
 
-            if (odunc == null || odunc.Uye == null)
-                return Json(new { success = false, message = "Ödünç kaydı veya üye bulunamadı." });
+            bool success = apiResult.GetProperty("success").GetBoolean();
+            string message = apiResult.GetProperty("message").GetString();
 
-            var kitap = odunc.Kitap;
-            if (kitap != null)
-                kitap.Stok += 1;
-
-            // Ceza hesaplama
-            decimal ceza = odunc.HesaplananCeza;
-
-            var okunan = new OkunanKitaplar
-            {
-                KullaniciId = odunc.KullaniciId != 0 ? odunc.KullaniciId : odunc.Uye.KullaniciId,
-                UyeId = odunc.UyeId,
-                KitapId = odunc.KitapId,
-                KategoriId = kitap?.KategoriId ?? 0,
-                AlisTarihi = odunc.AlisTarihi,
-                IadeTarihi = odunc.IadeTarihi,
-                Durum = true,
-                Kitap = kitap
-            };
-
-            _context.OkunanKitaplar.Add(okunan);
-            _context.Odunc.Remove(odunc);
-            _context.Kitap.Update(kitap);
-            _context.SaveChanges();
-
-
-            string mesaj = ceza > 0
-                ? $"Kitap teslim edildi, ancak {ceza}₺ gecikme cezası uygulandı."
-                : "Kitap başarıyla teslim edildi!";
-
-            return Json(new { success = true, message = mesaj });
+            return Json(new { success = success, message = message });
         }
     }
 }

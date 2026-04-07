@@ -82,20 +82,20 @@
             var id = btn.data("id");
 
             $.ajax({
-                type: "GET",
-                url: "/Odunc/TeslimEt",
+                type: "POST", 
+                url: "/Odunc/TeslimEtAjax", 
                 data: { id: id },
                 success: function (res) {
                     if (res.success) {
                         $("#row-" + id).fadeOut(300, function () { $(this).remove(); });
-                        $("#sonuc").html('<p class="text-green-600">' + res.message + '</p>');
+                        $("#sonuc").html('<p class="text-green-600 font-bold">' + res.message + '</p>');
                     } else {
-                        $("#sonuc").html('<p class="text-red-600">' + res.message + '</p>');
+                        $("#sonuc").html('<p class="text-red-600 font-bold">' + res.message + '</p>');
                     }
                     setTimeout(function () { $("#sonuc").html(''); }, 3000);
                 },
                 error: function () {
-                    $("#sonuc").html('<p class="text-red-600">Sunucu hatası oluştu.</p>');
+                    $("#sonuc").html('<p class="text-red-600 font-bold">Sunucu hatası oluştu.</p>');
                     setTimeout(function () { $("#sonuc").html(''); }, 3000);
                 }
             });
