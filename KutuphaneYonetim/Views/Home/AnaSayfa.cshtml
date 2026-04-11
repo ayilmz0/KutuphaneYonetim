@@ -8,12 +8,18 @@
     <meta charset="utf-8" />
     <title>Kütüphane Yönetim Sistemi</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        html, body {
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        html, body {
             height: 100%;
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f172a;
         }
 
         body {
@@ -22,78 +28,144 @@
         }
 
         header {
-            background-color: rgb(17 24 39);
-            color: white;
-            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo span {
+            color: #3b82f6; 
+        }
+
+        nav {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
 
         nav a {
-            color: white;
-            margin-right: 15px;
+            color: #f8fafc;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        nav a.login-btn {
+            background-color: #2563eb;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+
+        nav a.login-btn:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
         }
 
         .banner {
             flex: 1;
             position: relative;
-            background: url('/images/kutup.jpg') center/cover no-repeat;
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/images/kutup.jpg') center/cover no-repeat;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             flex-direction: column;
-        }
-
-        .banner::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4);
+            text-align: center;
+            padding: 0 20px;
+            margin-top: 80px; 
         }
 
         .banner-text {
-            position: relative;
-            z-index: 1;
-            font-size: 3em;
-            font-weight: bold;
-            text-align: center;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+            color: #ffffff;
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 15px;
+            animation: fadeInDown 1s ease-out;
         }
+
         .banner-text-1 {
-            position: relative;
-            z-index: 1;
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+            color: #94a3b8;
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 40px;
+            max-width: 600px;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 15px 35px;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .cta-btn:hover {
+            background-color: #60a5fa;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(59, 130, 246, 0.4);
         }
 
         .footer {
-            background: rgb(17 24 39);
-            color: white;
-            padding: 20px;
+            background: #0f172a;
+            color: #64748b;
+            padding: 25px 20px;
             text-align: center;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
-
+       
     </style>
 </head>
 <body>
+
     <header>
+        <a href="/" class="logo">Kütüphane<span>Sistemi</span></a>
         <nav>
-            <a href="/">Anasayfa</a>
-            <a href="/Kullanici/Register">Giriş</a>
+            <a href="/Kullanici/Register" class="login-btn">Giriş Yap</a>
         </nav>
     </header>
 
     <div class="banner">
-        <i><div class="banner-text">Kütüphane Yönetim Sistemi</div></i>
-        <div class="banner-text-1">Aktif Olarak Hizmetinizdeyiz!</div>
+        <h1 class="banner-text">Kütüphane Yönetim Sistemi</h1>
+        <p class="banner-text-1">Binlerce kitap arasından dilediğini seç, okumaya hemen başla. Aktif olarak hizmetinizdeyiz!</p>
     </div>
 
     <div class="footer">
-        &copy; 2025 Kütüphane Yönetim Sistemi. Tüm hakları saklıdır.
+        &copy; 2026 Kütüphane Yönetim Sistemi. Tüm hakları saklıdır.
     </div>
+
 </body>
 </html>
