@@ -11,6 +11,7 @@
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
 
 <div class="page-container">
     <div class="header-section">
@@ -18,7 +19,7 @@
         <p class="page-subtitle">Sistemde kayıtlı kitap kategorilerini görüntüleyin ve yönetin.</p>
     </div>
 
-    <div id="sonuc" class="mb-4"></div>
+    <div id="sonuc" class="mb-4" style="display:none;"></div>
 
     <div class="toolbar">
         <form method="get" class="search-form" id="searchForm">
@@ -81,7 +82,7 @@
         --border-color: #e2e8f0;
         --input-bg: #f8fafc;
 
-        --primary: #4f46e5; 
+        --primary: #4f46e5;
         --primary-hover: #4338ca;
         --danger: #ef4444;
         --danger-hover: #dc2626;
@@ -95,7 +96,7 @@
     }
 
     .page-container {
-        max-width: 900px; 
+        max-width: 900px;
         margin: 40px auto;
         padding: 0 20px;
         animation: fadeUp 0.6s ease-out forwards;
@@ -263,24 +264,17 @@
         box-shadow: 0 4px 10px -2px rgba(239, 68, 68, 0.4);
     }
 
-    .alert-box {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 20px;
-        border-radius: 12px;
-        font-size: 0.95rem;
-        animation: slideDownFade 0.4s ease-out;
+    .swal2-popup {
+        font-family: 'Poppins', sans-serif !important;
+        border-radius: 20px !important;
     }
-    .alert-success { background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
-    .alert-danger { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .swal2-confirm, .swal2-cancel {
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+    }
 
     @@keyframes fadeUp {
         from { opacity: 0; transform: translateY(15px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @@keyframes slideDownFade {
-        from { opacity: 0; transform: translateY(-10px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
@@ -293,59 +287,72 @@
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-
-    function showMessage(type, message) {
-        let icon = type === 'success'
-            ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
-            : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
-
-        let alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-        let title = type === 'success' ? 'Başarılı!' : 'Hata!';
-
-        $("#sonuc").html(`
-            <div class="alert-box ${alertClass}">
-                ${icon}
-                <div><strong>${title}</strong> ${message}</div>
-            </div>
-        `).show();
-
-        setTimeout(function () {
-            $("#sonuc").fadeOut(400, function () { $(this).html('').show(); });
-        }, 3500);
-    }
-
     $("#searchForm").submit(function (e) {
         e.preventDefault();
     });
 
     $(document).on("click", ".delete-btn", function () {
-        if (!confirm("Bu kategoriyi silmek istediğinizden emin misiniz?")) return;
-
         var btn = $(this);
         var id = btn.data("id");
         var row = $("#row-" + id);
 
-        btn.prop("disabled", true).css("opacity", "0.6");
+        Swal.fire({
+            title: 'Kategoriyi Sil',
+            text: "Bu kategoriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444', 
+            cancelButtonColor: '#64748b', 
+            confirmButtonText: 'Evet, Sil!',
+            cancelButtonText: 'İptal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.prop("disabled", true).css("opacity", "0.6");
 
-        $.ajax({
-            type: "DELETE",
-            url: "/api/Kategori/" + id,
-            success: function (res) {
-                if (res.success) {
-                    row.fadeOut(400, function () {
-                        $(this).remove();
-                    });
-                    showMessage('success', res.message || 'Kategori başarıyla silindi.');
-                } else {
-                    showMessage('error', res.message || 'Silme işlemi başarısız oldu.');
-                    btn.prop("disabled", false).css("opacity", "1");
-                }
-            },
-            error: function () {
-                showMessage('error', 'Sunucu ile iletişim kurulurken bir hata oluştu.');
-                btn.prop("disabled", false).css("opacity", "1");
+                $.ajax({
+                    type: "DELETE",
+                    url: "/api/Kategori/" + id,
+                    success: function (res) {
+                        if (res.success) {
+                            row.fadeOut(400, function () {
+                                $(this).remove();
+                            });
+
+                            // Başarılı Mesajı
+                            Swal.fire({
+                                title: 'Silindi!',
+                                text: res.message || 'Kategori başarıyla silindi.',
+                                icon: 'success',
+                                confirmButtonColor: '#4f46e5',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            // Sunucudan dönen hata
+                            Swal.fire({
+                                title: 'Hata!',
+                                text: res.message || 'Silme işlemi başarısız oldu.',
+                                icon: 'error',
+                                confirmButtonColor: '#4f46e5'
+                            });
+                            btn.prop("disabled", false).css("opacity", "1");
+                        }
+                    },
+                    error: function () {
+                        // Bağlantı veya sistem hatası
+                        Swal.fire({
+                            title: 'Hata!',
+                            text: 'Sunucu ile iletişim kurulurken bir hata oluştu.',
+                            icon: 'error',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        btn.prop("disabled", false).css("opacity", "1");
+                    }
+                });
             }
         });
     });
@@ -367,9 +374,16 @@
                     $("#kategoriTableBody").html(res);
                 },
                 error: function () {
-                    showMessage('error', 'Arama sonuçları getirilirken bir hata oluştu.');
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Arama sonuçları getirilemedi.',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
                 }
             });
-        }, 300); 
+        }, 300);
     });
 </script>

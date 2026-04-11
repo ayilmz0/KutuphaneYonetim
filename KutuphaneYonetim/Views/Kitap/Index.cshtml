@@ -11,6 +11,7 @@
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
 
 <div class="page-container">
 
@@ -338,12 +339,21 @@
     .btn-borrow { background-color: #eff6ff; color: var(--primary); }
     .btn-borrow:hover { background-color: var(--primary); color: white; }
 
+    .swal2-popup {
+        font-family: 'Poppins', sans-serif !important;
+        border-radius: 20px !important;
+    }
+    .swal2-confirm, .swal2-cancel {
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+    }
+
     @@keyframes fadeUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
-    @@keyframes slideDownFade {
+    q@keyframes slideDownFade {
         from { opacity: 0; transform: translateY(-15px); }
         to { opacity: 1; transform: translateY(0); }
     }
@@ -359,30 +369,72 @@
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 
-    // Silme işlemi
     $(document).on("click", ".delete-btn", function () {
-        if (!confirm("Bu kitabı silmek istediğinizden emin misiniz?")) return;
+        var btn = $(this);
+        var id = btn.data("id");
+        var row = $("#row-" + id);
 
-        var id = $(this).data("id");
+        // Modern Onay Penceresi (SweetAlert)
+        Swal.fire({
+            title: 'Kitabı Sil',
+            text: "Bu kitabı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444', 
+            cancelButtonColor: '#64748b', 
+            confirmButtonText: 'Evet, Sil!',
+            cancelButtonText: 'İptal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Silme onaylandı, butonu pasif yap
+                btn.prop("disabled", true).css("opacity", "0.6");
 
-        $.ajax({
-            type: "DELETE",
-            url: "/api/Kitap/" + id,
-            success: function (res) {
-                if (res.success) {
-                    // Satırı yavaşça silen tatlı animasyon
-                    $("#row-" + id).fadeOut(400, function () {
-                        $(this).remove();
-                    });
-                } else {
-                    alert(res.message);
-                }
-            },
-            error: function () {
-                alert("Sunucu hatası oluştu.");
+                $.ajax({
+                    type: "DELETE",
+                    url: "/api/Kitap/" + id,
+                    success: function (res) {
+                        if (res.success) {
+                            // Satırı yavaşça silen tatlı animasyon
+                            row.fadeOut(400, function () {
+                                $(this).remove();
+                            });
+
+                            // Başarılı Mesajı
+                            Swal.fire({
+                                title: 'Silindi!',
+                                text: res.message || 'Kitap başarıyla silindi.',
+                                icon: 'success',
+                                confirmButtonColor: '#3b82f6',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            // Sunucudan dönen hata
+                            Swal.fire({
+                                title: 'Hata!',
+                                text: res.message || 'Silme işlemi başarısız oldu.',
+                                icon: 'error',
+                                confirmButtonColor: '#3b82f6'
+                            });
+                            btn.prop("disabled", false).css("opacity", "1");
+                        }
+                    },
+                    error: function () {
+                        // Bağlantı veya sistem hatası
+                        Swal.fire({
+                            title: 'Hata!',
+                            text: 'Sunucu ile iletişim kurulurken bir hata oluştu.',
+                            icon: 'error',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        btn.prop("disabled", false).css("opacity", "1");
+                    }
+                });
             }
         });
     });
@@ -400,12 +452,17 @@
                 $("#kitapTableBody").html(res);
             },
             error: function () {
-                console.error("Arama sırasında hata oluştu.");
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Arama sonuçları getirilemedi.',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
             }
         });
     });
-
-    // Temp mesaj gizleme (Hafifçe kaybolarak)
     setTimeout(function () {
         var msg = document.getElementById("temp-message");
         if (msg) {
