@@ -1,111 +1,165 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"]</title>
+    <title>@ViewData["Title"] - Kütüphane Yönetim</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc; 
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
-<body class="flex h-screen bg-gray-100">
+<body class="flex h-screen overflow-hidden">
 
-    <div id="sidebar" class="fixed top-0 left-0 h-screen w-16 bg-gray-900 text-gray-200 flex flex-col transition-all duration-300">
-        <button onclick="toggleSidebar()" class="p-4 focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-        </button>
+    <aside id="sidebar" class="fixed top-0 left-0 h-screen w-20 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 z-50 shadow-2xl overflow-y-auto overflow-x-hidden">
 
-        <nav class="flex flex-col mt-5 space-y-2">
+        <div class="flex items-center justify-between p-4 mb-4 border-b border-slate-700/50">
+            <div class="flex items-center text-white sidebar-logo hidden whitespace-nowrap">
+                <svg class="w-8 h-8 text-indigo-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span class="font-bold text-lg tracking-wide">Kütüphane</span>
+            </div>
 
-            <a class="flex items-center p-4 hover:bg-gray-700"
-               asp-controller="Home"
-               asp-action="Index">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <button onclick="toggleSidebar()" class="focus:outline-none p-2 rounded-lg hover:bg-slate-800 transition-colors mx-auto sidebar-toggle-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+
+        <nav class="flex flex-col space-y-2 px-3">
+
+            <a class="nav-link flex items-center p-3 rounded-xl hover:bg-indigo-600 hover:text-white group"
+               asp-controller="Home" asp-action="Index">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
                 </svg>
-                <span class="ml-2 hidden sidebar-text">Ana Sayfa</span>
+                <span class="ml-3 font-medium hidden sidebar-text whitespace-nowrap">Ana Sayfa</span>
             </a>
 
-            <a class="flex items-center p-4 hover:bg-gray-700"
-               asp-controller="Kitap"
-               asp-action="Index">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <a class="nav-link flex items-center p-3 rounded-xl hover:bg-indigo-600 hover:text-white group"
+               asp-controller="Kitap" asp-action="Index">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                 </svg>
-                <span class="ml-2 hidden sidebar-text">Kitaplar</span>
+                <span class="ml-3 font-medium hidden sidebar-text whitespace-nowrap">Kitaplar</span>
             </a>
 
-            <a class="flex items-center p-4 hover:bg-gray-700"
-               asp-controller="Kategori"
-               asp-action="Index">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+            <a class="nav-link flex items-center p-3 rounded-xl hover:bg-indigo-600 hover:text-white group"
+               asp-controller="Kategori" asp-action="Index">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                     <path d="M11.644 1.59a.75.75 0 0 1 .712 0l9.75 5.25a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.712 0l-9.75-5.25a.75.75 0 0 1 0-1.32l9.75-5.25Z" />
                     <path d="m3.265 10.602 7.668 4.129a2.25 2.25 0 0 0 2.134 0l7.668-4.13 1.37.739a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.71 0l-9.75-5.25a.75.75 0 0 1 0-1.32l1.37-.738Z" />
                     <path d="m10.933 19.231-7.668-4.13-1.37.739a.75.75 0 0 0 0 1.32l9.75 5.25c.221.12.489.12.71 0l9.75-5.25a.75.75 0 0 0 0-1.32l-1.37-.738-7.668 4.13a2.25 2.25 0 0 1-2.134-.001Z" />
                 </svg>
-
-                <span class="ml-2 hidden sidebar-text">Kategori</span>
+                <span class="ml-3 font-medium hidden sidebar-text whitespace-nowrap">Kategoriler</span>
             </a>
 
-            <a class="flex items-center p-4 hover:bg-gray-700"
-               asp-controller="Odunc"
-               asp-action="Index">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <a class="nav-link flex items-center p-3 rounded-xl hover:bg-indigo-600 hover:text-white group"
+               asp-controller="Odunc" asp-action="Index">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
                 </svg>
-                <span class="ml-2 hidden sidebar-text">Ödünç</span>
+                <span class="ml-3 font-medium hidden sidebar-text whitespace-nowrap">Ödünç İşlemleri</span>
             </a>
 
-            <a class="flex items-center p-4 hover:bg-gray-700"
-               asp-controller="Profil"
-               asp-action="Index">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+            <a class="nav-link flex items-center p-3 rounded-xl hover:bg-indigo-600 hover:text-white group"
+               asp-controller="Profil" asp-action="Index">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                     <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
                 </svg>
-                <span class="ml-2 hidden sidebar-text">Profil</span>
+                <span class="ml-3 font-medium hidden sidebar-text whitespace-nowrap">Profilim</span>
             </a>
+        </nav>
 
-            <a class="flex items-center p-4 hover:bg-gray-700"
-               asp-controller="Home"
-               asp-action="AnaSayfa">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+        <div class="mt-auto px-3 mb-6">
+            <a class="nav-link flex items-center p-3 rounded-xl text-red-400 hover:bg-red-500 hover:text-white group"
+               asp-controller="Home" asp-action="AnaSayfa">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 flex-shrink-0 group-hover:scale-110 transition-transform">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                 </svg>
-                <span class="ml-2 hidden sidebar-text">Çıkış Yap</span>
+                <span class="ml-3 font-medium hidden sidebar-text whitespace-nowrap">Çıkış Yap</span>
             </a>
+        </div>
+    </aside>
 
-
-        </nav>
-    </div>
-
-    <div id="content" class="flex-1 transition-all duration-300 p-6 ml-16">
-        @RenderBody()
-    </div>
+    <main id="content" class="flex-1 transition-all duration-300 ml-20 h-screen overflow-y-auto">
+        <div class="p-6">
+            @RenderBody()
+        </div>
+    </main>
 
     <script>
-
         function toggleSidebar() {
             const sidebar = document.getElementById("sidebar");
             const content = document.getElementById("content");
             const texts = document.querySelectorAll(".sidebar-text");
+            const logos = document.querySelectorAll(".sidebar-logo");
+            const toggleBtn = document.querySelector(".sidebar-toggle-btn");
 
-            if (sidebar.classList.contains("w-16")) {
-                sidebar.classList.remove("w-16");
+            if (sidebar.classList.contains("w-20")) {
+
+                sidebar.classList.remove("w-20");
                 sidebar.classList.add("w-64");
+
+                content.classList.remove("ml-20");
                 content.classList.add("ml-64");
-                content.classList.remove("ml-16");
-                texts.forEach(t => t.classList.remove("hidden"));
+
+                toggleBtn.classList.remove("mx-auto");
+
+                setTimeout(() => {
+                    texts.forEach(t => t.classList.remove("hidden"));
+                    logos.forEach(l => l.classList.remove("hidden"));
+                }, 150); 
+
             } else {
                 sidebar.classList.remove("w-64");
-                sidebar.classList.add("w-16");
-                content.classList.add("ml-16");
+                sidebar.classList.add("w-20");
+
                 content.classList.remove("ml-64");
+                content.classList.add("ml-20");
+
+                toggleBtn.classList.add("mx-auto");
+
                 texts.forEach(t => t.classList.add("hidden"));
+                logos.forEach(l => l.classList.add("hidden"));
             }
         }
-
     </script>
 
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -10,69 +10,332 @@
     var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-@if (TempData["Uyari"] != null)
-{
-    <div id="temp-message" class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4 inline-block" role="alert">
-        <strong class="font-bold">Uyarı!</strong>
-        <span class="block sm:inline">@TempData["Uyari"]</span>
+<div class="page-container">
+    <div class="header-section">
+        <h1 class="page-title">Ödünç Kitaplarım</h1>
+        <p class="page-subtitle">Kütüphaneden ödünç aldığınız kitapları ve iade durumlarını takip edin.</p>
     </div>
-}
 
-@if (rol == "Personel")
-{
-    <div id="temp-message" class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4 inline-block" role="alert">
-        <strong class="font-bold">Uyarı!</strong>
-        <span class="block sm:inline">Ödünç alabilmek için "Üye" olmanız gerekmektedir!</span>
-    </div>
-}
+    <div id="sonuc" class="mb-4"></div>
 
-@if (rol == "Üye")
-{
-
-    @if (Model.Any())
+    @if (TempData["Uyari"] != null)
     {
-        <h1 class="text-2xl font-bold mb-4">Ödünç Aldığınız Kitaplar</h1>
-
-        <table class="min-w-full border">
-            <thead>
-                <tr class="bg-gray-200">
-                    <th class="p-2 border">Kitap Adı</th>
-                    <th class="p-2 border">Yazar</th>
-                    <th class="p-2 border">Alış Tarihi</th>
-                    <th class="p-2 border">İade Tarihi</th>
-                    <th class="p-2 border">Ceza Durumu</th>
-                    <th class="p-2 border">İşlemler</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                @foreach (var Odunc in Model)
-                {
-                    <tr id="row-@Odunc.OduncId">
-                        <td class="p-2 border">@Odunc.Kitap?.KitapAd</td>
-                        <td class="p-2 border">@Odunc.Kitap?.Yazar</td>
-                        <td class="p-2 border">@Odunc.AlisTarihi</td>
-                        <td class="p-2 border">@Odunc.IadeTarihi</td>
-                        <td class="p-2 border">@Odunc.HesaplananCeza ₺</td>
-                        <td class="p-2 border">
-                            <button class="bg-green-500 text-white px-4 py-2 rounded teslim-et-btn" data-id="@Odunc.OduncId">
-                                Teslim Et
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <div class="alert-box alert-warning mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <div><strong>Uyarı!</strong> @TempData["Uyari"]</div>
+        </div>
     }
-}
 
-<div id="sonuc" class="mt-4"></div>
+    @if (rol == "Personel")
+    {
+        <div class="alert-box alert-warning mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <div><strong>Erişim Kısıtlaması:</strong> Ödünç işlemi yapabilmek ve listeyi görebilmek için <strong>"Üye"</strong> girişi yapmanız gerekmektedir!</div>
+        </div>
+    }
+
+    @if (rol == "Üye")
+    {
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Kitap Adı</th>
+                                <th>Yazar</th>
+                                <th>Alış Tarihi</th>
+                                <th>İade Tarihi</th>
+                                <th>Ceza Durumu</th>
+                                <th class="action-column">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Odunc in Model)
+                            {
+                                <tr id="row-@Odunc.OduncId">
+                                    <td class="font-medium text-main">@Odunc.Kitap?.KitapAd</td>
+                                    <td>@Odunc.Kitap?.Yazar</td>
+
+                                    <td>@Odunc.AlisTarihi.ToString("dd.MM.yyyy")</td>
+                                    <td>@Odunc.IadeTarihi.ToString("dd.MM.yyyy")</td>
+
+                                    <td class="font-medium @(Odunc.HesaplananCeza > 0 ? "text-danger" : "text-success")">
+                                        @(Odunc.HesaplananCeza > 0 ? Odunc.HesaplananCeza.ToString("0.00") + " ₺" : "Yok")
+                                    </td>
+
+                                    <td class="action-cell">
+                                        <button type="button" class="btn-success-sm teslim-et-btn" data-id="@Odunc.OduncId">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                            Teslim Et
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <h3>Henüz Kitap Ödünç Almadınız</h3>
+                <p>Şu an üzerinizde kayıtlı herhangi bir kitap bulunmuyor. Kütüphaneden yeni kitaplar keşfetmeye başlayabilirsiniz.</p>
+                <a href="/Kitap/Index" class="btn-primary mt-3">Kitaplara Göz At</a>
+            </div>
+        }
+    }
+</div>
+
+<style>
+
+    :root {
+        --bg-body: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+
+        --success: #10b981;
+        --success-hover: #059669;
+        --success-bg: #ecfdf5;
+
+        --danger: #ef4444;
+        --danger-bg: #fef2f2;
+
+        --warning: #f59e0b;
+        --warning-bg: #fffbeb;
+        --warning-border: #fde68a;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+    }
+
+    .page-container {
+        max-width: 1000px; 
+        margin: 40px auto;
+        padding: 0 20px;
+        animation: fadeUp 0.6s ease-out forwards;
+    }
+
+    .header-section {
+        margin-bottom: 24px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: var(--text-main);
+        letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+        color: var(--text-muted);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .table-card {
+        background-color: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .modern-table thead th {
+        background-color: #f8fafc;
+        padding: 16px 24px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1.5px solid var(--border-color);
+    }
+
+    .modern-table tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .modern-table tbody tr:hover {
+        background-color: #f1f5f9;
+    }
+
+    .modern-table td {
+        padding: 16px 24px;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        vertical-align: middle;
+    }
+
+    .font-medium { font-weight: 500; }
+    .text-main { color: var(--text-main) !important; }
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+
+    .action-column { width: 130px; text-align: right; }
+    .action-cell { text-align: right; }
+
+    .empty-state {
+        background-color: var(--card-bg);
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 60px 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .empty-icon {
+        background-color: #f1f5f9;
+        color: #94a3b8;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+
+    .empty-state h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .empty-state p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        max-width: 400px;
+    }
+
+    .mt-3 { margin-top: 16px; }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: var(--primary);
+        color: white;
+        text-decoration: none;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px -4px rgba(59, 130, 246, 0.4);
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-2px);
+    }
+
+    .btn-success-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background-color: var(--success-bg);
+        color: var(--success);
+        border: 1px solid transparent;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-success-sm:hover {
+        background-color: var(--success);
+        color: white;
+        box-shadow: 0 4px 10px -2px rgba(16, 185, 129, 0.4);
+    }
+
+    .alert-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        animation: slideDownFade 0.4s ease-out;
+    }
+    .alert-success { background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .alert-danger { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .alert-warning { background-color: var(--warning-bg); border: 1px solid var(--warning-border); color: #b45309; }
+
+    @@keyframes fadeUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @@keyframes slideDownFade {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @@media (max-width: 640px) {
+        .modern-table th, .modern-table td { padding: 12px 16px; }
+    }
+</style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+    function showMessage(type, message) {
+        let icon = type === 'success'
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+
+        let alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        let title = type === 'success' ? 'Başarılı!' : 'Hata!';
+
+        $("#sonuc").html(`
+            <div class="alert-box ${alertClass}">
+                ${icon}
+                <div><strong>${title}</strong> ${message}</div>
+            </div>
+        `).show();
+
+        setTimeout(function () {
+            $("#sonuc").fadeOut(400, function () { $(this).html('').show(); });
+        }, 3500);
+    }
 
     $(document).ready(function () {
         $(".teslim-et-btn").on("click", function (e) {
@@ -80,27 +343,37 @@
 
             var btn = $(this);
             var id = btn.data("id");
+            var row = $("#row-" + id);
+
+            // Çift tıklamayı engellemek için butonu pasif yap
+            btn.prop("disabled", true).css("opacity", "0.6").html('İşleniyor...');
 
             $.ajax({
-                type: "POST", 
-                url: "/Odunc/TeslimEtAjax", 
+                type: "POST",
+                url: "/Odunc/TeslimEtAjax",
                 data: { id: id },
                 success: function (res) {
                     if (res.success) {
-                        $("#row-" + id).fadeOut(300, function () { $(this).remove(); });
-                        $("#sonuc").html('<p class="text-green-600 font-bold">' + res.message + '</p>');
+                        // Satırı animasyonla sil
+                        row.fadeOut(400, function () {
+                            $(this).remove();
+
+                            // Eğer tabloda hiç satır kalmadıysa sayfayı yenile ki Empty State gelsin
+                            if ($(".modern-table tbody tr").length === 0) {
+                                setTimeout(() => location.reload(), 1000);
+                            }
+                        });
+                        showMessage('success', res.message);
                     } else {
-                        $("#sonuc").html('<p class="text-red-600 font-bold">' + res.message + '</p>');
+                        showMessage('error', res.message);
+                        btn.prop("disabled", false).css("opacity", "1").html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Teslim Et');
                     }
-                    setTimeout(function () { $("#sonuc").html(''); }, 3000);
                 },
                 error: function () {
-                    $("#sonuc").html('<p class="text-red-600 font-bold">Sunucu hatası oluştu.</p>');
-                    setTimeout(function () { $("#sonuc").html(''); }, 3000);
+                    showMessage('error', 'Sunucu ile iletişim kurulamadı. Lütfen tekrar deneyin.');
+                    btn.prop("disabled", false).css("opacity", "1").html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Teslim Et');
                 }
             });
         });
     });
-
 </script>
-

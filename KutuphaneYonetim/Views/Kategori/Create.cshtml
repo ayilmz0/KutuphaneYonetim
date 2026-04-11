@@ -4,55 +4,282 @@
     ViewData["Title"] = "Kategori Ekle";
 }
 
-<h1 class="text-2xl font-bold mb-4">Kategori Ekle</h1>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-<form id="kategoriForm" asp-action="Create" method="post" class="max-w-lg bg-gray-100 p-6 rounded shadow-md">
-    <div class="mb-4">
-        <label class="block font-medium mb-1">Kategori Adı</label>
-        <input asp-for="KategoriAd" class="w-full border p-2 rounded" />
-        <span asp-validation-for="KategoriAd" class="text-red-500 text-sm"></span>
+<div class="page-container">
+    <div class="header-section">
+        <h1 class="page-title">Yeni Kategori Ekle</h1>
+        <p class="page-subtitle">Sisteme yeni bir kitap türü veya kategorisi tanımlayın.</p>
     </div>
 
-    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-green-600">Ekle</button>
-</form>
+    <div id="sonuc" class="mb-4"></div>
 
-<div id="sonuc" class="mt-4"></div>
+    <div class="form-card">
+        <form id="kategoriForm" asp-action="Create" method="post">
+
+            <div class="form-group">
+                <label class="modern-label">Kategori Adı</label>
+                <div class="input-wrapper">
+                    <input asp-for="KategoriAd" class="modern-input" placeholder="Örn: Bilim Kurgu, Tarih, Roman..." autocomplete="off" />
+                </div>
+                <span asp-validation-for="KategoriAd" class="validation-error"></span>
+            </div>
+
+            <div class="form-actions">
+                <a href="/Kategori/Index" class="btn-secondary">İptal Et</a>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                    Kategoriyi Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+
+    :root {
+        --bg-body: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --input-bg: #f8fafc;
+
+        --primary: #10b981; 
+        --primary-hover: #059669;
+        --danger: #ef4444;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-main);
+    }
+
+    .page-container {
+        max-width: 600px; 
+        margin: 50px auto;
+        padding: 0 20px;
+        animation: fadeUp 0.6s ease-out forwards;
+    }
+
+    .header-section {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: var(--text-main);
+        letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+        color: var(--text-muted);
+        font-size: 1.05rem;
+        margin: 0;
+    }
+
+    .form-card {
+        background-color: var(--card-bg);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.06);
+        border: 1px solid var(--border-color);
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modern-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .modern-input {
+        width: 100%;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1.5px solid var(--border-color);
+        background-color: var(--input-bg);
+        font-family: inherit;
+        font-size: 1rem;
+        color: var(--text-main);
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .modern-input:focus {
+        border-color: var(--primary);
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    }
+
+    .modern-input::placeholder {
+        color: #cbd5e1;
+    }
+
+    .validation-error {
+        color: var(--danger);
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: 4px;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 16px;
+        margin-top: 35px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-secondary {
+        padding: 14px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background-color: #f1f5f9;
+        color: var(--text-main);
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.5);
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 25px -6px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .alert-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        animation: slideDownFade 0.4s ease-out;
+    }
+    .alert-success { background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .alert-danger { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+    @@keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @@keyframes slideDownFade {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@media (max-width: 640px) {
+        .form-card { padding: 24px; }
+        .form-actions { flex-direction: column-reverse; }
+        .btn-primary, .btn-secondary { width: 100%; text-align: center; justify-content: center; }
+    }
+</style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-
     $("#kategoriForm").submit(function (e) {
         e.preventDefault();
 
+        const submitBtn = $("#submitBtn");
+        const orjinalMetin = submitBtn.html();
+
+        submitBtn.prop("disabled", true).html(`
+            <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            Kaydediliyor...
+        `);
+
+        if (!$('#spin-style').length) {
+            $('head').append('<style id="spin-style">@@keyframes spin { 100% { transform: rotate(360deg); } } .animate-spin { animation: spin 1s linear infinite; }</style>');
+        }
+
         $.ajax({
             type: "POST",
-            url: "/api/Kategori", 
+            url: "/api/Kategori",
             data: $(this).serialize(),
             success: function (res) {
                 if (res.success) {
-                    $("#sonuc").html(`<p class="text-green-600">${res.message} Yönlendiriliyorsunuz...</p>`);
+                    $("#sonuc").html(`
+                        <div class="alert-box alert-success">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <div><strong>Başarılı!</strong> ${res.message} Listeye yönlendiriliyorsunuz...</div>
+                        </div>
+                    `);
+
                     setTimeout(function () {
                         window.location.href = "/Kategori/Index";
-                    }, 1000);
+                    }, 1500);
 
                     $("#kategoriForm")[0].reset();
                 } else {
-                    $("#sonuc").html(`<p class="text-red-600">${res.message}</p>`);
+                    $("#sonuc").html(`
+                        <div class="alert-box alert-danger">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                            <div><strong>Hata!</strong> ${res.message}</div>
+                        </div>
+                    `);
+                    submitBtn.prop("disabled", false).html(orjinalMetin);
+
                     setTimeout(function () {
-                        $("#sonuc").html('');
+                        $("#sonuc").fadeOut(300, function () { $(this).html('').show(); });
                     }, 3000);
                 }
             },
             error: function (xhr) {
-                // API'den dönen BadRequest (400) mesajlarını yakalamak istersen:
-                var errorMessage = "Sunucu hatası oluştu.";
+                var errorMessage = "Sunucu ile iletişim kurulamadı. Lütfen tekrar deneyin.";
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
                 }
-                $("#sonuc").html(`<p class="text-red-600">${errorMessage}</p>`);
+
+                $("#sonuc").html(`
+                    <div class="alert-box alert-danger">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <div><strong>Sistem Hatası!</strong> ${errorMessage}</div>
+                    </div>
+                `);
+                submitBtn.prop("disabled", false).html(orjinalMetin);
             }
         });
     });
-
 </script>
