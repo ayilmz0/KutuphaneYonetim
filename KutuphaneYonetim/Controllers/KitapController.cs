@@ -1,4 +1,5 @@
 ﻿using KutuphaneYonetim.Models;
+using KutuphaneYonetim.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
@@ -16,6 +17,29 @@ namespace KutuphaneYonetim.Controllers
             _httpClient.BaseAddress = new Uri("https://localhost:44379/");
         }
 
+        // Helper: DTO -> Entity mapping
+        private Kitap MapDtoToKitap(KitapDetailDto dto)
+        {
+            if (dto == null) return null;
+            return new Kitap
+            {
+                KitapId = dto.KitapId,
+                KategoriId = dto.KategoriId,
+                KitapAd = dto.KitapAd,
+                Yazar = dto.Yazar,
+                YayinEvi = dto.YayinEvi,
+                SayfaSayisi = dto.SayfaSayisi,
+                ISBN = dto.ISBN,
+                Stok = dto.Stok,
+                Durum = dto.Durum,
+                Kategori = dto.Kategori != null ? new Kategori
+                {
+                    KategoriId = dto.Kategori.KategoriId,
+                    KategoriAd = dto.Kategori.KategoriAd
+                } : null
+            };
+        }
+
         // GET: /Kitap/Index
         public async Task<IActionResult> Index()
         {
@@ -25,7 +49,11 @@ namespace KutuphaneYonetim.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-                kitaplar = JsonSerializer.Deserialize<List<Kitap>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var dtoList = JsonSerializer.Deserialize<List<KitapDetailDto>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (dtoList != null)
+                {
+                    kitaplar = dtoList.Select(MapDtoToKitap).ToList();
+                }
             }
 
             return View(kitaplar);
@@ -40,7 +68,11 @@ namespace KutuphaneYonetim.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-                kategoriler = JsonSerializer.Deserialize<List<Kategori>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var kategoriDtos = JsonSerializer.Deserialize<List<KategoriDto>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (kategoriDtos != null)
+                {
+                    kategoriler = kategoriDtos.Select(d => new Kategori { KategoriId = d.KategoriId, KategoriAd = d.KategoriAd }).ToList();
+                }
             }
 
             ViewBag.Kategori = new SelectList(kategoriler, "KategoriId", "KategoriAd");
@@ -56,7 +88,8 @@ namespace KutuphaneYonetim.Controllers
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-                kitap = JsonSerializer.Deserialize<Kitap>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var dto = JsonSerializer.Deserialize<KitapDetailDto>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                kitap = MapDtoToKitap(dto);
             }
 
             if (kitap == null) return NotFound();
@@ -66,7 +99,8 @@ namespace KutuphaneYonetim.Controllers
             if (katResponse.IsSuccessStatusCode)
             {
                 var katJson = await katResponse.Content.ReadAsStringAsync();
-                var kategoriler = JsonSerializer.Deserialize<List<Kategori>>(katJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var kategoriDtos = JsonSerializer.Deserialize<List<KategoriDto>>(katJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var kategoriler = kategoriDtos?.Select(d => new Kategori { KategoriId = d.KategoriId, KategoriAd = d.KategoriAd }).ToList() ?? new List<Kategori>();
                 ViewBag.Kategori = new SelectList(kategoriler, "KategoriId", "KategoriAd", kitap.KategoriId);
             }
 
@@ -79,12 +113,16 @@ namespace KutuphaneYonetim.Controllers
             List<Kitap> kitaplar = new List<Kitap>();
 
             // API'nin arama ucuna istek atıyoruz
-            var response = await _httpClient.GetAsync($"api/Kitap/Ara?q={q}");
+            var response = await _httpClient.GetAsync($"api/Kitap/Ara?q={System.Net.WebUtility.UrlEncode(q ?? string.Empty)}");
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-                kitaplar = JsonSerializer.Deserialize<List<Kitap>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var dtoList = JsonSerializer.Deserialize<List<KitapDetailDto>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (dtoList != null)
+                {
+                    kitaplar = dtoList.Select(MapDtoToKitap).ToList();
+                }
             }
 
             // JSON verisini aldık, eski sistemdeki gibi PartialView olarak HTML'e çevirip JQuery'e veriyoruz
