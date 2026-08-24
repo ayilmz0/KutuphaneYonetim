@@ -1,5 +1,8 @@
-﻿using KutuphaneYonetim.Context;
+﻿using System;
+using System.Linq;
+using KutuphaneYonetim.Context;
 using KutuphaneYonetim.Models;
+using KutuphaneYonetim.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -26,13 +29,11 @@ namespace KutuphaneYonetim.Controllers.Api
         {
             var kullanici = _context.Kullanici.FirstOrDefault(k => k.Email.ToLower() == istek.Email.ToLower());
 
-            // BCrypt ile şifre doğrulama
             if (kullanici == null || !BCrypt.Net.BCrypt.Verify(istek.Sifre, kullanici.Sifre))
             {
                 return Unauthorized(new { success = false, message = "Geçersiz E-posta veya Şifre." });
             }
 
-            // JWT (Token) İçeriğini Hazırlama
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, kullanici.KullaniciId.ToString()),
@@ -48,11 +49,10 @@ namespace KutuphaneYonetim.Controllers.Api
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(2), // 2 saat geçerli
+                expires: DateTime.Now.AddHours(2),
                 signingCredentials: creds
             );
 
-            // İlişkili ID'leri bulma (UyeId veya PersonelId)
             int? uyeId = _context.Uye.FirstOrDefault(u => u.KullaniciId == kullanici.KullaniciId)?.UyeId;
             int? personelId = _context.Personel.FirstOrDefault(p => p.KullaniciId == kullanici.KullaniciId)?.PersonelId;
 
@@ -68,13 +68,26 @@ namespace KutuphaneYonetim.Controllers.Api
             });
         }
 
+        // Register artık DTO alır ve DTO ile cevap verir
         [HttpPost("Register")]
-        public IActionResult Register([FromBody] Kullanici kullanici)
+        public IActionResult Register([FromBody] KullaniciCreateDto dto)
         {
+            if (dto == null) return BadRequest(new { success = false, message = "Geçersiz veri." });
+            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Sifre)) return BadRequest(new { success = false, message = "E-posta ve şifre gerekli." });
+
             try
             {
-                // Şifreyi Hashleme
-                kullanici.Sifre = BCrypt.Net.BCrypt.HashPassword(kullanici.Sifre);
+                var existing = _context.Kullanici.Any(k => k.Email.ToLower() == dto.Email.ToLower());
+                if (existing) return BadRequest(new { success = false, message = "Bu e-posta zaten kayıtlı." });
+
+                var kullanici = new Kullanici
+                {
+                    Ad = dto.Ad?.Trim(),
+                    Soyad = dto.Soyad?.Trim(),
+                    Email = dto.Email.Trim(),
+                    Rol = dto.Rol ?? "Üye",
+                    Sifre = BCrypt.Net.BCrypt.HashPassword(dto.Sifre)
+                };
 
                 _context.Kullanici.Add(kullanici);
                 _context.SaveChanges();
@@ -104,9 +117,19 @@ namespace KutuphaneYonetim.Controllers.Api
                 }
 
                 _context.SaveChanges();
-                return Ok(new { success = true, message = "Kayıt başarılı." });
+
+                var resultDto = new KullaniciDto
+                {
+                    KullaniciId = kullanici.KullaniciId,
+                    Ad = kullanici.Ad,
+                    Soyad = kullanici.Soyad,
+                    Email = kullanici.Email,
+                    Rol = kullanici.Rol
+                };
+
+                return Created(string.Empty, resultDto);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return BadRequest(new { success = false, message = "Kayıt sırasında bir hata oluştu." });
             }

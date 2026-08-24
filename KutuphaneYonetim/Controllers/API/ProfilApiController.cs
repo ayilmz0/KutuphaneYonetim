@@ -1,10 +1,11 @@
 ﻿using KutuphaneYonetim.Context;
+using KutuphaneYonetim.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KutuphaneYonetim.Controllers.Api
 {
-    [Authorize] // DİKKAT: Bu kilit sayesinde Token'ı olmayan kimse bu API'ye ulaşamaz!
+    [Authorize]
     [Route("api/Profil")]
     [ApiController]
     public class ProfilApiController : ControllerBase
@@ -24,7 +25,6 @@ namespace KutuphaneYonetim.Controllers.Api
             if (kullanici == null)
                 return NotFound();
 
-            // Sadece gerekli verileri taşıyan DTO'muzu hazırlıyoruz
             var profilDto = new ProfilDto
             {
                 AdSoyad = $"{kullanici.Ad} {kullanici.Soyad}",
@@ -53,15 +53,5 @@ namespace KutuphaneYonetim.Controllers.Api
 
             return Ok(profilDto);
         }
-    }
-
-    // API'den MVC'ye döneceğimiz veri paketi
-    public class ProfilDto
-    {
-        public string AdSoyad { get; set; }
-        public string Email { get; set; }
-        public string Rol { get; set; }
-        public DateTime? KayitTarihi { get; set; }
-        public bool Durum { get; set; }
     }
 }

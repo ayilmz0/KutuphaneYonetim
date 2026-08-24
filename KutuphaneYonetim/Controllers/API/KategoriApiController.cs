@@ -1,11 +1,14 @@
-﻿using KutuphaneYonetim.Context;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using KutuphaneYonetim.Context;
 using KutuphaneYonetim.Models;
+using KutuphaneYonetim.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace KutuphaneYonetim.Controllers.Api
 {
-   
     [Route("api/Kategori")]
     [ApiController]
     public class KategoriApiController : ControllerBase
@@ -17,26 +20,29 @@ namespace KutuphaneYonetim.Controllers.Api
             _context = context;
         }
 
-        // Tüm Kategorileri Getir
+        // Tüm Kategorileri Getir (DTO)
         [HttpGet]
         public IActionResult GetAll()
         {
-            var kategoriler = _context.Kategori.ToList();
-            return Ok(kategoriler);
+            var kategoriler = _context.Kategori.AsNoTracking().ToList();
+            var dto = kategoriler.Select(k => new KategoriDto
+            {
+                KategoriId = k.KategoriId,
+                KategoriAd = k.KategoriAd
+            }).ToList();
+            return Ok(dto);
         }
 
-        // Kategori Ekle
+        // Kategori Ekle (DTO alır)
         [HttpPost]
-        public IActionResult Create([FromForm] Kategori kategori)
+        public IActionResult Create([FromBody] KategoriDto kategoriDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = "Hatalı giriş yapıldı." });
-            }
+            if (kategoriDto == null || string.IsNullOrWhiteSpace(kategoriDto.KategoriAd))
+                return BadRequest(new { success = false, message = "Geçersiz veri." });
 
-            // Aynı isimde kategori var mı kontrolü
+            // Aynı isimde kategori var mı kontrolü (case-insensitive)
             bool kategoriVarMi = _context.Kategori
-                .Any(k => k.KategoriAd.ToLower() == kategori.KategoriAd.ToLower());
+                .Any(k => k.KategoriAd != null && k.KategoriAd.ToLower() == kategoriDto.KategoriAd.Trim().ToLower());
 
             if (kategoriVarMi)
             {
@@ -45,9 +51,21 @@ namespace KutuphaneYonetim.Controllers.Api
 
             try
             {
+                var kategori = new Kategori
+                {
+                    KategoriAd = kategoriDto.KategoriAd.Trim()
+                };
+
                 _context.Kategori.Add(kategori);
                 _context.SaveChanges();
-                return Ok(new { success = true, message = "Kategori başarıyla eklendi." });
+
+                var createdDto = new KategoriDto
+                {
+                    KategoriId = kategori.KategoriId,
+                    KategoriAd = kategori.KategoriAd
+                };
+
+                return CreatedAtAction(nameof(GetAll), createdDto);
             }
             catch (Exception ex)
             {
@@ -55,7 +73,7 @@ namespace KutuphaneYonetim.Controllers.Api
             }
         }
 
-        // Kategori ve Bağlı Kitapları Sil
+        // Kategori ve Bağlı Kitapları Sil (DTO response)
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
@@ -68,7 +86,7 @@ namespace KutuphaneYonetim.Controllers.Api
 
             try
             {
-                // Önce o kategoriye bağlı kitapları sil (Cascading Delete)
+                // Önce o kategoriye bağlı kitapları sil (eğer cascade yoksa)
                 var kitaplar = _context.Kitap.Where(k => k.KategoriId == id).ToList();
                 if (kitaplar.Any())
                 {
@@ -79,7 +97,13 @@ namespace KutuphaneYonetim.Controllers.Api
                 _context.Kategori.Remove(kategori);
                 _context.SaveChanges();
 
-                return Ok(new { success = true, message = "Kategori ve bağlı kitaplar başarıyla silindi.", kategoriId = id });
+                var dto = new KategoriDto
+                {
+                    KategoriId = kategori.KategoriId,
+                    KategoriAd = kategori.KategoriAd
+                };
+
+                return Ok(new { success = true, message = "Kategori ve bağlı kitaplar başarıyla silindi.", kategori = dto });
             }
             catch (Exception ex)
             {
@@ -87,15 +111,26 @@ namespace KutuphaneYonetim.Controllers.Api
             }
         }
 
-        // Kategori Ara
+        // Kategori Ara (DTO)
         [HttpGet("Ara")]
         public IActionResult Ara([FromQuery] string q)
         {
-            var kategoriler = string.IsNullOrEmpty(q)
-                ? _context.Kategori.ToList()
-                : _context.Kategori.Where(k => k.KategoriAd.Contains(q)).ToList();
+            var sorgu = _context.Kategori.AsQueryable();
 
-            return Ok(kategoriler);
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                sorgu = sorgu.Where(k => k.KategoriAd != null && EF.Functions.Like(k.KategoriAd, $"%{q}%"));
+            }
+
+            var kategoriler = sorgu.AsNoTracking().ToList();
+
+            var dto = kategoriler.Select(k => new KategoriDto
+            {
+                KategoriId = k.KategoriId,
+                KategoriAd = k.KategoriAd
+            }).ToList();
+
+            return Ok(dto);
         }
     }
 }
