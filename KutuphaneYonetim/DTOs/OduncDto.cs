@@ -1,3 +1,5 @@
+using System;
+
 namespace KutuphaneYonetim.DTOs
 {
     public class OduncDto
@@ -41,5 +43,10 @@ namespace KutuphaneYonetim.DTOs
         public bool Durum { get; set; }
         public KitapDto Kitap { get; set; }
         public UyeDto Uye { get; set; }
+    }
+
+    public class OduncAlDto
+    {
+        public int KitapId { get; set; }
     }
 }

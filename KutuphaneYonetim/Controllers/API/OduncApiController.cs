@@ -1,6 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using KutuphaneYonetim.Context;
 using KutuphaneYonetim.DTOs;
+using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +23,7 @@ namespace KutuphaneYonetim.Controllers.Api
             _context = context;
         }
 
-        // Üyeye göre ödünç alınan kitapları DTO ile döndür
+        // GET: api/Odunc/Uye/5
         [HttpGet("Uye/{uyeId}")]
         public IActionResult GetByUyeId(int uyeId)
         {
@@ -28,7 +32,7 @@ namespace KutuphaneYonetim.Controllers.Api
                 .Include(o => o.Kitap)
                     .ThenInclude(k => k.Kategori)
                 .Include(o => o.Uye)
-                .Where(o => o.UyeId == uyeId)
+                .Where(o => o.UyeId == uyeId && o.Durum == true) // Sadece teslim edilmemişler
                 .Select(o => new OduncDetailDto
                 {
                     OduncId = o.OduncId,
@@ -66,6 +70,80 @@ namespace KutuphaneYonetim.Controllers.Api
             return Ok(oduncler);
         }
 
-        // (Diğer endpoint'ler olduğu gibi bırakıldı...)
+        // POST: api/Odunc/OduncAl
+        [HttpPost("OduncAl")]
+        public async Task<IActionResult> OduncAl([FromBody] OduncAlDto istekData)
+        {
+            if (istekData == null || istekData.KitapId <= 0)
+            {
+                return BadRequest(new { success = false, message = "Geçersiz kitap bilgisi." });
+            }
+
+            var kullaniciIdClaim = User.Claims.FirstOrDefault(c => c.Type == "KullaniciId" || c.Type == ClaimTypes.NameIdentifier);
+
+            if (kullaniciIdClaim == null)
+            {
+                return Unauthorized(new { success = false, message = "Kullanıcı kimliği doğrulanamadı." });
+            }
+
+            int kullaniciId = int.Parse(kullaniciIdClaim.Value);
+
+            var uye = await _context.Uye.FirstOrDefaultAsync(u => u.KullaniciId == kullaniciId);
+            if (uye == null)
+            {
+                return BadRequest(new { success = false, message = "Üye kaydınız bulunamadı." });
+            }
+
+            var kitap = await _context.Kitap.FirstOrDefaultAsync(k => k.KitapId == istekData.KitapId);
+            if (kitap == null || kitap.Stok <= 0)
+            {
+                return BadRequest(new { success = false, message = "Kitap stokta bulunmamaktadır." });
+            }
+
+            var yeniOdunc = new Odunc
+            {
+                KullaniciId = kullaniciId,
+                UyeId = uye.UyeId,
+                KitapId = kitap.KitapId,
+                AlisTarihi = DateTime.Now,
+                IadeTarihi = DateTime.Now.AddDays(15),
+                Durum = true,
+                Ceza = 0
+            };
+
+            kitap.Stok -= 1;
+
+            _context.Odunc.Add(yeniOdunc);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Kitap başarıyla ödünç alındı." });
+        }
+
+        [HttpPost("TeslimEt/{id}")]
+        public async Task<IActionResult> TeslimEt(int id)
+        {
+            var odunc = await _context.Odunc.Include(o => o.Kitap).FirstOrDefaultAsync(o => o.OduncId == id);
+
+            if (odunc == null)
+            {
+                return Ok(new { success = false, message = "Ödünç kaydı bulunamadı." });
+            }
+
+            if (!odunc.Durum)
+            {
+                return Ok(new { success = false, message = "Bu kitap zaten teslim edilmiş." });
+            }
+
+            odunc.Durum = false;
+
+            if (odunc.Kitap != null)
+            {
+                odunc.Kitap.Stok += 1;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Kitap başarıyla teslim edildi." });
+        }
     }
 }

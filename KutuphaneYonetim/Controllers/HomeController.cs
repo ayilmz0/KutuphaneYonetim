@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Diagnostics;
+using System.Linq;
 using KutuphaneYonetim.Context;
 using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace KutuphaneYonetim.Controllers
 {
@@ -18,7 +21,6 @@ namespace KutuphaneYonetim.Controllers
         public IActionResult Index()
         {
             var rol = HttpContext.Session.GetString("Rol");
-
             var model = new DashboardViewModel();
 
             if (rol == "Personel")
@@ -29,31 +31,56 @@ namespace KutuphaneYonetim.Controllers
             }
             else if (rol == "Üye")
             {
-                var uyeIdStr = HttpContext.Session.GetString("KullaniciId");
-                if (string.IsNullOrEmpty(uyeIdStr) || !int.TryParse(uyeIdStr, out int uyeId))
+                // Session'daki tüm olasý ID anahtarlarýný kontrol ediyoruz
+                var uyeIdStr = HttpContext.Session.GetString("UyeId");
+                var kullaniciIdStr = HttpContext.Session.GetString("KullaniciId");
+
+                int.TryParse(uyeIdStr, out int uyeId);
+                int.TryParse(kullaniciIdStr, out int kullaniciId);
+
+                // 1. Doðrudan Odunc tablosundan Üyeye ait TÜM kayýtlarý çekiyoruz
+                var oduncGecmisi = (from o in _context.Odunc
+                                    join k in _context.Kitap on o.KitapId equals k.KitapId
+                                    where (uyeId > 0 && o.UyeId == uyeId) || (kullaniciId > 0 && o.KullaniciId == kullaniciId)
+                                    select new
+                                    {
+                                        Id = o.OduncId,
+                                        AlisTarihi = (DateTime?)o.AlisTarihi,
+                                        IadeTarihi = (DateTime?)o.IadeTarihi,
+                                        KitapAd = k.KitapAd,
+                                        SayfaSayisi = k.SayfaSayisi // Kitap modelindeki sayfa alaný
+                                    }).ToList();
+
+                // 2. Eðer Odunc tablosunda yoksa OkunanKitaplar tablosuna bak
+                if (!oduncGecmisi.Any())
                 {
-                    return RedirectToAction("Register", "Kullanici");
+                    oduncGecmisi = (from ok in _context.OkunanKitaplar
+                                    join k in _context.Kitap on ok.KitapId equals k.KitapId
+                                    where (kullaniciId > 0 && ok.KullaniciId == kullaniciId) || (uyeId > 0 && ok.KullaniciId == uyeId)
+                                    select new
+                                    {
+                                        Id = ok.Id,
+                                        AlisTarihi = (DateTime?)ok.AlisTarihi,
+                                        IadeTarihi = (DateTime?)ok.IadeTarihi,
+                                        KitapAd = k.KitapAd,
+                                        SayfaSayisi = k.SayfaSayisi
+                                    }).ToList();
                 }
 
-                var userOkunanKitaplar = (from ok in _context.OkunanKitaplar
-                                          join k in _context.Kitap on ok.KitapId equals k.KitapId
-                                          where ok.KullaniciId == uyeId
-                                          select new
-                                          {
-                                              ok.Id,
-                                              ok.AlisTarihi,
-                                              ok.IadeTarihi,
-                                              k.KitapAd,
-                                              k.SayfaSayisi
-                                          }).ToList();
+                // --- HESAPLAMALAR ---
 
-                model.OkunanKitapSayisi = userOkunanKitaplar.Count;
-                model.ToplamSayfa = userOkunanKitaplar.Sum(x => x.SayfaSayisi);
-                model.SonOkunanKitapAdi = userOkunanKitaplar
-                         .Where(x => x.IadeTarihi != null)
-                         .OrderByDescending(x => x.IadeTarihi)
-                         .FirstOrDefault()?.KitapAd ?? "Henüz kitap yok";
+                // Okunan Kitap Sayýsý
+                model.OkunanKitapSayisi = oduncGecmisi.Count;
+
+                // Toplam Sayfa Sayýsý (Kitap tablosundaki SayfaSayisi deðerlerini toplar)
+                model.ToplamSayfa = oduncGecmisi.Sum(x => x.SayfaSayisi);
+
+                // Son Okunan Kitap Adý (En son tarihli kitabý alýr)
+                model.SonOkunanKitapAdi = oduncGecmisi
+                    .OrderByDescending(x => x.AlisTarihi)
+                    .FirstOrDefault()?.KitapAd ?? "Henüz kitap yok";
             }
+
             return View(model);
         }
 

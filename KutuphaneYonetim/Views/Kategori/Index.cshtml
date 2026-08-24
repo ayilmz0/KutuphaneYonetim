@@ -359,8 +359,7 @@
 
     let searchTimeout;
 
-    $("#searchBox").on("keyup", function (e) {
-        e.preventDefault();
+    $("#searchBox").on("keyup search input", function (e) {
         var query = $(this).val();
 
         clearTimeout(searchTimeout);

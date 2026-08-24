@@ -40,13 +40,12 @@ namespace KutuphaneYonetim.Controllers.Api
             if (kategoriDto == null || string.IsNullOrWhiteSpace(kategoriDto.KategoriAd))
                 return BadRequest(new { success = false, message = "Geçersiz veri." });
 
-            // Aynı isimde kategori var mı kontrolü (case-insensitive)
             bool kategoriVarMi = _context.Kategori
                 .Any(k => k.KategoriAd != null && k.KategoriAd.ToLower() == kategoriDto.KategoriAd.Trim().ToLower());
 
             if (kategoriVarMi)
             {
-                return BadRequest(new { success = false, message = "Kategori zaten var." });
+                return BadRequest(new { success = false, message = "Bu kategori zaten mevcut." });
             }
 
             try
@@ -65,7 +64,8 @@ namespace KutuphaneYonetim.Controllers.Api
                     KategoriAd = kategori.KategoriAd
                 };
 
-                return CreatedAtAction(nameof(GetAll), createdDto);
+                // JSON dönüş formatını JavaScript'in anlayacağı standart yapıya getirdik
+                return Ok(new { success = true, message = "Kategori başarıyla eklendi.", kategori = createdDto });
             }
             catch (Exception ex)
             {
@@ -86,14 +86,12 @@ namespace KutuphaneYonetim.Controllers.Api
 
             try
             {
-                // Önce o kategoriye bağlı kitapları sil (eğer cascade yoksa)
                 var kitaplar = _context.Kitap.Where(k => k.KategoriId == id).ToList();
                 if (kitaplar.Any())
                 {
                     _context.Kitap.RemoveRange(kitaplar);
                 }
 
-                // Sonra kategoriyi sil
                 _context.Kategori.Remove(kategori);
                 _context.SaveChanges();
 

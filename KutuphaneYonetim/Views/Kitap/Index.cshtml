@@ -440,36 +440,39 @@
     });
 
     // Arama
-    $("#searchBox").on("keyup", function (e) {
+    // Formun varsayılan submit edilip sayfayı yenilemesini engelle
+    $(".search-form").on("submit", function (e) {
         e.preventDefault();
+    });
+
+    // Arama Kutusu Canlı Dinleme
+    let searchTimeout;
+    $("#searchBox").on("keyup search input", function (e) {
         var query = $(this).val();
 
-        $.ajax({
-            type: "GET",
-            url: "/Kitap/AraAjax",
-            data: { q: query },
-            success: function (res) {
-                $("#kitapTableBody").html(res);
-            },
-            error: function () {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'error',
-                    title: 'Arama sonuçları getirilemedi.',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
-            }
-        });
+        clearTimeout(searchTimeout);
+
+        // Kullanıcı yazmayı bıraktıktan 300ms sonra isteği gönder (sunucuyu yormamak için)
+        searchTimeout = setTimeout(function () {
+            $.ajax({
+                type: "GET",
+                url: "/Kitap/AraAjax",
+                data: { q: query },
+                success: function (res) {
+                    $("#kitapTableBody").html(res);
+                },
+                error: function () {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Arama sonuçları getirilemedi.',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+            });
+        }, 300);
     });
-    setTimeout(function () {
-        var msg = document.getElementById("temp-message");
-        if (msg) {
-            msg.style.transition = "opacity 0.5s ease";
-            msg.style.opacity = "0";
-            setTimeout(() => msg.style.display = 'none', 500);
-        }
-    }, 4000);
 
 </script>

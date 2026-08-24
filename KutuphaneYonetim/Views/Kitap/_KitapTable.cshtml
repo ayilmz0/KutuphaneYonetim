@@ -5,34 +5,40 @@
     var rol = HttpContextAccessor.HttpContext.Session.GetString("Rol");
 }
 
-@foreach (var kitap in Model)
+@if (Model != null && Model.Any())
 {
-    <tr id="row-@kitap.KitapId">
-        <td class="p-2 border">@kitap.KitapAd</td>
-        <td class="p-2 border">@kitap.Yazar</td>
-        <td class="p-2 border">@kitap.Kategori.KategoriAd</td>
-
-        <td class="p-2 border">
-            @* Sadece Personel için Güncelle ve Sil *@
-            @if (rol == "Personel")
-            {
-                <button type="button" class="bg-red-500 text-white px-4 py-2 rounded delete-btn" data-id="@kitap.KitapId">
-                    Sil
-                </button>
-                <button>
-                    <a asp-action="Update" asp-route-id="@kitap.KitapId" class="bg-yellow-500 text-white px-4 py-2 rounded">
-                        Güncelle
+    @foreach (var kitap in Model)
+    {
+        <tr id="row-@kitap.KitapId">
+            <td class="font-medium text-main">@kitap.KitapAd</td>
+            <td class="text-muted">@kitap.Yazar</td>
+            <td>
+                <span class="category-badge">@(kitap.Kategori != null ? kitap.Kategori.KategoriAd : "Kategorisiz")</span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    @if (rol == "Personel")
+                    {
+                        <button type="button" class="action-btn btn-delete delete-btn" data-id="@kitap.KitapId">
+                            Sil
+                        </button>
+                        <a asp-action="Update" asp-route-id="@kitap.KitapId" class="action-btn btn-edit">
+                            Güncelle
+                        </a>
+                    }
+                    <a asp-controller="Odunc" asp-action="OduncAl" asp-route-KitapId="@kitap.KitapId" class="action-btn btn-borrow">
+                        Ödünç Al
                     </a>
-                </button>
-            }
-
-            @* Herkes için Ödünç Al *@
-            <a class="bg-green-500 text-white px-4 py-2 rounded odunc-al-btn"
-               asp-controller="Odunc"
-               asp-action="OduncAl"
-               asp-route-KitapId="@kitap.KitapId">
-                Ödünç Al
-            </a>
+                </div>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    <tr>
+        <td colspan="4" class="text-center text-muted py-4">
+            Aramanızla eşleşen herhangi bir kitap bulunamadı.
         </td>
     </tr>
 }
