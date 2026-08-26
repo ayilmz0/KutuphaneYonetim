@@ -1,5 +1,6 @@
-﻿using KutuphaneYonetim.Context;
-using KutuphaneYonetim.DTOs;
+﻿using System.Linq;
+using KutuphaneYonetim.Context;
+using KutuphaneYonetim.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,26 +21,31 @@ namespace KutuphaneYonetim.Controllers.Api
         [HttpGet("{id}")]
         public IActionResult GetProfil(int id)
         {
+            // 1. Ana Kullanıcı tablosundan veriyi bul
             var kullanici = _context.Kullanici.FirstOrDefault(k => k.KullaniciId == id);
 
             if (kullanici == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "Kullanıcı bulunamadı." });
 
-            var profilDto = new ProfilDto
+            // 2. Profil model nesnesini varsayılan bilgilerle oluştur
+            var profil = new Profil
             {
-                AdSoyad = $"{kullanici.Ad} {kullanici.Soyad}",
+                ProfilId = kullanici.KullaniciId,
                 Email = kullanici.Email,
                 Rol = kullanici.Rol,
+                AdSoyad = $"{kullanici.Ad} {kullanici.Soyad}".Trim(),
                 Durum = false
             };
 
+            // 3. Kullanıcının Rolüne göre ilişkili tablodan detay verileri doldur
             if (kullanici.Rol == "Üye")
             {
                 var uye = _context.Uye.FirstOrDefault(u => u.KullaniciId == kullanici.KullaniciId);
                 if (uye != null)
                 {
-                    profilDto.KayitTarihi = uye.KayitTarihi;
-                    profilDto.Durum = uye.Durum;
+                    profil.AdSoyad = $"{uye.Ad} {uye.Soyad}".Trim();
+                    profil.KayitTarihi = uye.KayitTarihi;
+                    profil.Durum = uye.Durum;
                 }
             }
             else if (kullanici.Rol == "Personel")
@@ -47,11 +53,12 @@ namespace KutuphaneYonetim.Controllers.Api
                 var personel = _context.Personel.FirstOrDefault(p => p.KullaniciId == kullanici.KullaniciId);
                 if (personel != null)
                 {
-                    profilDto.Durum = personel.Durum;
+                    profil.AdSoyad = $"{personel.PersonelAd} {personel.PersonelSoyad}".Trim();
+                    profil.Durum = personel.Durum;
                 }
             }
 
-            return Ok(profilDto);
+            return Ok(profil);
         }
     }
 }

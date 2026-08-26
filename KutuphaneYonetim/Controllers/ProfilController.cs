@@ -1,13 +1,18 @@
-﻿using KutuphaneYonetim.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading.Tasks;
+using KutuphaneYonetim.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KutuphaneYonetim.Controllers
 {
     public class ProfilController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         public ProfilController(IHttpClientFactory httpClientFactory)
         {
@@ -20,28 +25,26 @@ namespace KutuphaneYonetim.Controllers
             var kullaniciIdStr = HttpContext.Session.GetString("KullaniciId");
             var token = HttpContext.Session.GetString("JwtToken");
 
-            // Eğer ID yoksa veya Session'da Token yoksa, direkt Login'e yolla
+            // Eğer ID veya JWT Token yoksa oturum açılmamıştır, Login'e yönlendir
             if (string.IsNullOrEmpty(kullaniciIdStr) || string.IsNullOrEmpty(token))
             {
                 return RedirectToAction("Login", "Kullanici");
             }
 
-            // DİKKAT: API'ye giderken cebimizdeki Token'ı kimlik olarak gösteriyoruz!
+            // JWT Token'ı HTTP isteğinin başlığına ekliyoruz
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // API'ye GET isteği atıyoruz
+            // API'ye profil verilerini getirmesi için GET isteği atıyoruz
             var response = await _httpClient.GetAsync($"api/Profil/{kullaniciIdStr}");
 
             if (response.IsSuccessStatusCode)
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
-
-                // API'den gelen veriyi Profil modelimize dönüştürüyoruz
-                var profil = JsonSerializer.Deserialize<Profil>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var profil = JsonSerializer.Deserialize<Profil>(jsonString, _jsonOptions);
                 return View(profil);
             }
 
-            // Eğer API "Unauthorized" (401) dönerse, yani Token'ın süresi dolmuşsa veya sahteyse
+            // Eğer Token süresi dolduysa (401 Unauthorized), oturumu temizleyip yönlendir
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 HttpContext.Session.Clear();
@@ -49,7 +52,7 @@ namespace KutuphaneYonetim.Controllers
                 return RedirectToAction("Login", "Kullanici");
             }
 
-            // Başka bir hata olduysa boş model dön
+            // Başka bir hata oluşursa boş model dön
             return View(new Profil());
         }
     }
