@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using KutuphaneYonetim.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,12 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
 
 builder.Services.AddHttpContextAccessor();
+
+// appsettings.json içindeki EmailSettings bölümünü okuyup servislere ekler
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+// Email servisinizi DI container'a kaydedin (Scoped veya Transient yapabilirsiniz)
+builder.Services.AddScoped<IEmailServis, EmailServis>();
 
 // DbContext
 builder.Services.AddDbContext<KutuphaneYonetimContext>(options =>
