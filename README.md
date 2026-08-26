@@ -19,7 +19,7 @@ Bu proje, kütüphane işlemlerini güvenli ve modern bir arayüzle yönetmek i�
 * **Rol Tabanlı Yetkilendirme:** Admin ve Standart Kullanıcı rolleri için ayrıştırılmış yetki yönetimi.
 * **Kitap ve Üye Yönetimi:** Kitap ekleme, listeleme, güncelleme ve üye işlemleri.
 * **Ödünç / İade Süreçleri:** Kitapların ödünç alınması ve iade edilmesi işlemleri.
-* **Destek & İletişim Modülü.
+* **Destek & İletişim Modülü**.
 * **RESTful Mimari:** Endpoints tasarımı ve iyi uygulama standartlarına uygunluk.
 * **Kapsamlı Hata Yönetimi:** Veri doğrulama ve kullanıcı dostu hata bildirimleri.
 
