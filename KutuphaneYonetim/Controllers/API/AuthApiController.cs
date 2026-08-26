@@ -2,7 +2,6 @@
 using System.Linq;
 using KutuphaneYonetim.Context;
 using KutuphaneYonetim.Models;
-using KutuphaneYonetim.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -25,7 +24,7 @@ namespace KutuphaneYonetim.Controllers.Api
         }
 
         [HttpPost("Login")]
-        public IActionResult Login([FromBody] LoginIstekDto istek)
+        public IActionResult Login([FromBody] LoginIstek istek)
         {
             var kullanici = _context.Kullanici.FirstOrDefault(k => k.Email.ToLower() == istek.Email.ToLower());
 
@@ -53,6 +52,7 @@ namespace KutuphaneYonetim.Controllers.Api
                 signingCredentials: creds
             );
 
+            // İlişkili ID'leri bul
             int? uyeId = _context.Uye.FirstOrDefault(u => u.KullaniciId == kullanici.KullaniciId)?.UyeId;
             int? personelId = _context.Personel.FirstOrDefault(p => p.KullaniciId == kullanici.KullaniciId)?.PersonelId;
 
@@ -68,66 +68,42 @@ namespace KutuphaneYonetim.Controllers.Api
             });
         }
 
-        // Register artık DTO alır ve DTO ile cevap verir
         [HttpPost("Register")]
-        public IActionResult Register([FromBody] KullaniciCreateDto dto)
+        public IActionResult Register([FromBody] Kullanici model)
         {
-            if (dto == null) return BadRequest(new { success = false, message = "Geçersiz veri." });
-            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Sifre)) return BadRequest(new { success = false, message = "E-posta ve şifre gerekli." });
+            if (model == null)
+                return BadRequest(new { success = false, message = "Geçersiz veri." });
 
             try
             {
-                var existing = _context.Kullanici.Any(k => k.Email.ToLower() == dto.Email.ToLower());
-                if (existing) return BadRequest(new { success = false, message = "Bu e-posta zaten kayıtlı." });
+                var existing = _context.Kullanici.Any(k => k.Email.ToLower() == model.Email.ToLower());
+                if (existing)
+                    return BadRequest(new { success = false, message = "Bu e-posta zaten kayıtlı." });
 
-                var kullanici = new Kullanici
+                // GÜVENLİK DÜZELTMESİ: İstemciden Rol ne gelirse gelsin sunucuda ezeriz.
+                model.Rol = "Üye";
+                model.Sifre = BCrypt.Net.BCrypt.HashPassword(model.Sifre); // Şifre güvenliği
+                model.Ad = model.Ad?.Trim();
+                model.Soyad = model.Soyad?.Trim();
+                model.Email = model.Email?.Trim();
+
+                _context.Kullanici.Add(model);
+                _context.SaveChanges(); // KullaniciId'nin oluşması için önce kaydediyoruz
+
+                // Gönderdiğiniz Uye modeline uygun olarak Üye tablosuna kayıt
+                var uye = new Uye
                 {
-                    Ad = dto.Ad?.Trim(),
-                    Soyad = dto.Soyad?.Trim(),
-                    Email = dto.Email.Trim(),
-                    Rol = dto.Rol ?? "Üye",
-                    Sifre = BCrypt.Net.BCrypt.HashPassword(dto.Sifre)
+                    KullaniciId = model.KullaniciId,
+                    Ad = model.Ad,
+                    Soyad = model.Soyad,
+                    KayitTarihi = DateTime.Now,
+                    Durum = true
                 };
 
-                _context.Kullanici.Add(kullanici);
+                _context.Uye.Add(uye);
                 _context.SaveChanges();
 
-                if (kullanici.Rol == "Üye")
-                {
-                    var uye = new Uye
-                    {
-                        Ad = kullanici.Ad,
-                        Soyad = kullanici.Soyad,
-                        KayitTarihi = DateTime.Now,
-                        Durum = true,
-                        KullaniciId = kullanici.KullaniciId
-                    };
-                    _context.Uye.Add(uye);
-                }
-                else if (kullanici.Rol == "Personel")
-                {
-                    var personel = new Personel
-                    {
-                        PersonelAd = kullanici.Ad,
-                        PersonelSoyad = kullanici.Soyad,
-                        Durum = true,
-                        KullaniciId = kullanici.KullaniciId
-                    };
-                    _context.Personel.Add(personel);
-                }
-
-                _context.SaveChanges();
-
-                var resultDto = new KullaniciDto
-                {
-                    KullaniciId = kullanici.KullaniciId,
-                    Ad = kullanici.Ad,
-                    Soyad = kullanici.Soyad,
-                    Email = kullanici.Email,
-                    Rol = kullanici.Rol
-                };
-
-                return Created(string.Empty, resultDto);
+                return Created(string.Empty, new { success = true, message = "Kayıt başarılı." });
             }
             catch (Exception)
             {
@@ -136,7 +112,8 @@ namespace KutuphaneYonetim.Controllers.Api
         }
     }
 
-    public class LoginIstekDto
+    // Login işlemi için basit bir sınıf (Aynı dosyanın en altında kalabilir)
+    public class LoginIstek
     {
         public string Email { get; set; }
         public string Sifre { get; set; }
