@@ -1,0 +1,298 @@
+﻿@model KutuphaneYonetim.Models.DestekFormuDto
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Bize Ulaşın";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Kütüphane Yönetim Sistemi - Destek</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        /* Ortak Header Tasarımı */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: opacity 0.3s ease;
+        }
+
+            .logo:hover {
+                opacity: 0.85;
+            }
+
+            .logo span {
+                color: #3b82f6;
+            }
+
+        /* Destek Sayfası İçerik Tasarımı */
+        .contact-wrapper {
+            max-width: 800px;
+            margin: 120px auto 50px auto; /* Header sabit olduğu için üstten boşluk bırakıldı */
+            padding: 0 20px;
+            animation: fadeUp 0.6s ease-out forwards;
+        }
+
+        .contact-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+            .contact-header h1 {
+                font-size: 2.2rem;
+                font-weight: 700;
+                color: #ffffff;
+                margin-bottom: 10px;
+            }
+
+            .contact-header p {
+                color: #94a3b8;
+                font-size: 1.05rem;
+                line-height: 1.6;
+            }
+
+        .contact-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modern-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+            .form-group label {
+                font-size: 0.95rem;
+                font-weight: 500;
+                color: #0f172a;
+            }
+
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 14px 18px;
+                border-radius: 12px;
+                border: 1.5px solid #e2e8f0;
+                background-color: #f8fafc;
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.95rem;
+                color: #0f172a;
+                outline: none;
+                transition: all 0.3s ease;
+            }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 120px;
+            }
+
+                .form-group input:focus,
+                .form-group textarea:focus {
+                    border-color: #3b82f6;
+                    background-color: #ffffff;
+                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+                }
+
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.5);
+        }
+
+            .btn-submit:hover {
+                background-color: #2563eb;
+                transform: translateY(-2px);
+                box-shadow: 0 12px 25px -6px rgba(59, 130, 246, 0.6);
+            }
+
+        /* Bildirim Stilleri */
+        .alert-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        @@keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .form-row {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .contact-card {
+                padding: 25px;
+            }
+
+            header {
+                padding: 15px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ÜST HEADER (Sadece Logo Var, Tıklayınca Ana Sayfaya Döner) -->
+    <header>
+        <a href="/" class="logo">Kütüphane<span>Sistemi</span></a>
+    </header>
+
+    <!-- FORM ALANI -->
+    <div class="contact-wrapper">
+
+        <div class="contact-header">
+            <h1>Destek & İletişim</h1>
+            <p>Kütüphane sistemimizle ilgili soru, öneri veya karşılaştığınız sorunları bize iletebilirsiniz. Ekibimiz en kısa sürede size dönüş yapacaktır.</p>
+        </div>
+
+        <!-- Başarı ve Hata Bildirimleri -->
+        @if (TempData["Basarili"] != null)
+        {
+            <div class="alert-box alert-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <div><strong>Başarılı!</strong> @TempData["Basarili"]</div>
+            </div>
+
+            <!-- 5 Saniye Sonra Ana Sayfaya Yönlendirme -->
+            <script>
+                setTimeout(function () {
+                    window.location.href = '@Url.Action("AnaSayfa", "Home")';
+                }, 5000);
+            </script>
+        }
+
+        @if (TempData["Hata"] != null)
+        {
+            <div class="alert-box alert-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                <div><strong>Hata!</strong> @TempData["Hata"]</div>
+            </div>
+        }
+
+        <!-- Form Kartı -->
+        <div class="contact-card">
+            <form asp-action="MesajGonder" asp-controller="MailDestek" method="post" class="modern-form">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="GonderenAdSoyad">Adınız Soyadınız</label>
+                        <input asp-for="GonderenAdSoyad" type="text" placeholder="Örn: Ahmet Yılmaz" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="GonderenEmail">E-Posta Adresiniz</label>
+                        <input asp-for="GonderenEmail" type="email" placeholder="Örn: ahmet@mail.com" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Konu">Konu</label>
+                    <input asp-for="Konu" type="text" placeholder="Hangi konuda destek istiyorsunuz?" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Mesaj">Mesajınız</label>
+                    <textarea asp-for="Mesaj" rows="5" placeholder="Lütfen mesajınızı detaylı bir şekilde yazın..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    Mesajı Gönder
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
