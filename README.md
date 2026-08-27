@@ -2,16 +2,16 @@
 
 ## Açıklama
 
-Bu proje, kütüphane işlemlerini güvenli ve modern bir arayüzle yönetmek için geliştirilmiş kapsamlı bir web uygulamasıdır. JWT tabanlı kimlik doğrulama, rol tabanlı yetkilendirme, RESTful API servisleri ve kullanıcı destek/iletişim modüllerini barındırır.
+Bu proje, kütüphane işlemlerini güvenli ve modern bir arayüzle yönetmek için geliştirilmiş kapsamlı bir web uygulamasıdır. JWT tabanlı kimlik doğrulama, rol tabanlı yetkilendirme, RESTful API servisleri, Docker kapsayıcı desteği ve kullanıcı destek/iletişim modüllerini barındırır.
 
 ## Teknolojiler
 
-* C# / ASP.NET Core MVC & Web API
-* Entity Framework Core
-* MSSQL
-* JWT (JSON Web Tokens)
-* SMTP / E-Posta Gönderme Servisi
-* HTML5, CSS3, JavaScript (Modern UI & Responsive Tasarım)
+* **Framework:** C# / ASP.NET Core 9.0 (MVC & Web API)
+* **Veritabanı:** Entity Framework Core & MSSQL
+* **Güvenlik:** JWT (JSON Web Tokens)
+* **Konteynerleştirme & CI/CD:** Docker, GitHub Actions
+* **İletişim Servisi:** SMTP / E-Posta Gönderme Servisi
+* **Arayüz:** HTML5, CSS3, JavaScript (Modern UI & Responsive Tasarım)
 
 ## Özellikler
 
@@ -19,13 +19,25 @@ Bu proje, kütüphane işlemlerini güvenli ve modern bir arayüzle yönetmek i�
 * **Rol Tabanlı Yetkilendirme:** Admin ve Standart Kullanıcı rolleri için ayrıştırılmış yetki yönetimi.
 * **Kitap ve Üye Yönetimi:** Kitap ekleme, listeleme, güncelleme ve üye işlemleri.
 * **Ödünç / İade Süreçleri:** Kitapların ödünç alınması ve iade edilmesi işlemleri.
-* **Destek & İletişim Modülü**.
-* **RESTful Mimari:** Endpoints tasarımı ve iyi uygulama standartlarına uygunluk.
-* **Kapsamlı Hata Yönetimi:** Veri doğrulama ve kullanıcı dostu hata bildirimleri.
+* **Docker:** Multi-stage build mimarisine sahip `Dockerfile` entegrasyonu ile uygulamanın tüm platformlarda (Linux/Windows) yalıtılmış ve yüksek performanslı çalışabilmesi.
+* **Otomatik CI/CD Akışı:** GitHub Actions ile her `push` ve `pull request` işleminde projenin otomatik derlenmesi (build) ve test edilmesi.
+* **Destek & İletişim Modülü:** 
+  * Kullanıcıların sistemsel sorunları, soru veya önerilerini e-posta olarak iletebilmesi.
+  * Form doğrulama mekanizmaları, yönlendirme zamanlayıcıları ve kullanıcı dostu bildirimler.
 
 ## Kurulum ve Çalıştırma
 
-1. Projeyi klonlayın veya bilgisayarınıza indirin.
-2. `appsettings.json` dosyası içerisindeki **ConnectionStrings** (MSSQL veritabanı bağlantısı) ve **EmailSettings** (SMTP e-posta gönderim bilgileri) ayarlarınızı kendi bilgilerinize göre güncelleyin.
-3. Visual Studio üzerinden projeyi **Build** edin.
-4. `F5` tuşuna basarak veya terminal üzerinden `dotnet run` komutu ile projeyi çalıştırın.
+### 1. Yerel Geliştirme Ortamı (IIS Express / Kestrel)
+1. `appsettings.json` içerisindeki **ConnectionStrings** (MSSQL veritabanı bağlantısı) ve **EmailSettings** (SMTP e-posta gönderim bilgileri) ayarlarınızı güncelleyin.
+2. Visual Studio üst menüsünden çalıştırma profili olarak **IIS Express** veya **KutuphaneYonetim** seçeneğini belirleyin.
+3. `F5` tuşuna basarak projeyi başlatın.
+
+### 2. Docker Kapsayıcısı ile Çalıştırma
+1. Bilgisayarınızda **Docker Desktop** uygulamasının açık olduğundan emin olun.
+2. `appsettings.json` içindeki veritabanı bağlantı adresini `host.docker.internal` (veya SQL Server IP adresi) olarak ayarlayın.
+3. Visual Studio üst menüsünden **Docker** profilini seçin ve `F5` ile projeyi konteyner üzerinde başlatın.
+   
+Alternatif olarak terminal üzerinden şu komut ile imaj oluşturup çalıştırabilirsiniz:
+```bash
+docker build -t kutuphane-yonetim .
+docker run -p 8080:8080 -p 8081:8081 kutuphane-yonetim
