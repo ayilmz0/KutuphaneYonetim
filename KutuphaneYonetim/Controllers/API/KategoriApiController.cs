@@ -86,12 +86,21 @@ namespace KutuphaneYonetim.Controllers.Api
 
             try
             {
+                // 1. Önce bu kategoriye bağlı OkunanKitaplar kayıtlarını sil
+                var okunanKitaplar = _context.OkunanKitaplar.Where(o => o.KategoriId == id).ToList();
+                if (okunanKitaplar.Any())
+                {
+                    _context.OkunanKitaplar.RemoveRange(okunanKitaplar);
+                }
+
+                // 2. Sonra bu kategoriye bağlı Kitapları sil
                 var kitaplar = _context.Kitap.Where(k => k.KategoriId == id).ToList();
                 if (kitaplar.Any())
                 {
                     _context.Kitap.RemoveRange(kitaplar);
                 }
 
+                // 3. En son Kategoriyi sil
                 _context.Kategori.Remove(kategori);
                 _context.SaveChanges();
 
@@ -101,11 +110,13 @@ namespace KutuphaneYonetim.Controllers.Api
                     KategoriAd = kategori.KategoriAd
                 };
 
-                return Ok(new { success = true, message = "Kategori ve bağlı kitaplar başarıyla silindi.", kategori = dto });
+                return Ok(new { success = true, message = "Kategori ve bağlı tüm kayıtlar başarıyla silindi.", kategori = dto });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "Silme hatası: " + ex.Message });
+                // InnerException ekleyerek veritabanı detay hatasını yakalayabilirsiniz
+                var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return StatusCode(500, new { success = false, message = "Silme hatası: " + errorMessage });
             }
         }
 
