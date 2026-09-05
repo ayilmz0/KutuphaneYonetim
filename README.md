@@ -6,7 +6,7 @@ Bu proje, kütüphane işlemlerini güvenli ve modern bir arayüzle yönetmek i�
 
 ## Teknolojiler
 
-* **Framework:** C# / ASP.NET Core 9.0 (MVC & Web API)
+* **Framework:** C# / ASP.NET Core 10.0 (MVC & Web API)
 * **Veritabanı:** Entity Framework Core & MSSQL
 * **Güvenlik:** JWT (JSON Web Tokens)
 * **Konteynerleştirme & CI/CD:** Docker, GitHub Actions
